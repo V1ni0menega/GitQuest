@@ -1,0 +1,24 @@
+# Antigravity / AI Agent customizations
+.agents/
+.agent/
+.gemini/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs and debug
+*.log
+npm-debug.log*
+
+# Node / Dependencies (caso venha a ser utilizado no futuro)
+node_modules/
+dist/
+build/
+.cache/
