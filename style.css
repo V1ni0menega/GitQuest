@@ -1,0 +1,101 @@
+:root {
+    /* === Cores de Fundo === */
+    --background-primary: #0b0f19;
+    --background-secondary: #121826;
+
+    /* === Cores de Texto === */
+    --text-primary: #d4d4d4;
+    --text-secondary: #808080;
+
+    /* === Cores de Acento === */
+    --accent-terminal: #06b6d4;
+    --accent-color: #f97316;
+
+    /* === Cores Semânticas (estados) === */
+    --success-return: #10b981;
+    --error-return: #ef4444;
+    --warning-return: #f59e0b;
+    --info-return: #3b82f6;
+
+    /* === Tipografia === */
+    --font-terminal: 'Fira Code', monospace;
+
+    /*=== Tamanhos de Fonte === */
+    --font-size-base: 16px;
+    --font-size-sm: 14px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    --font-size-2xl: 32px;
+    --font-size-3xl: 48px;
+    --font-size-4xl: 64px;
+
+    /*=== Espaçamentos === */
+    --spacing-base: 8px;
+    --spacing-sm: 4px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --spacing-3xl: 64px;
+
+    /*Bordas*/
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 16px;
+    --border-radius-xl: 32px;    
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-terminal);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    background-color: var(--background-primary);
+    height: 100vh;
+    overflow: hidden; /* Evita que a página inteira role; o scroll será interno dos painéis */
+}
+#app{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas:
+        "terminal pipeline"
+        "terminal missions";
+    height: 100vh;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+}
+
+.panel-terminal{
+    grid-area: terminal;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+
+}
+
+
+.panel-pipeline{
+    grid-area: pipeline;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+}
+
+
+.panel-missions{
+    grid-area: missions;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+
+}
+
+
+
+
