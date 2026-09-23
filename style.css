@@ -42,9 +42,10 @@
     --border-radius-sm: 4px;
     --border-radius-md: 8px;
     --border-radius-lg: 16px;
-    --border-radius-xl: 32px;    
-}
+    --border-radius-xl: 32px;  
+    
 
+}
 *, *::before, *::after {
     margin: 0;
     padding: 0;
@@ -70,14 +71,46 @@ body {
     padding: var(--spacing-md);
     gap: var(--spacing-md);
 }
+.button{
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.dot-red{
+    background-color: var(--error-return);
+}
+.dot-yellow{
+    background-color: var(--warning-return);
+}
+.dot-green{
+    background-color: var(--success-return);
+}
 
+
+.terminal-header{
+    display: flex;
+    margin-bottom: 20px;
+    gap: var(--spacing-sm);
+    align-items:center;
+}
 .panel-terminal{
     grid-area: terminal;
     background-color: var(--background-secondary);
     border-radius: var(--border-radius-md);
     padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    
 
 }
+.terminal-output{
+    flex: 1;    
+    overflow-y: auto;
+    list-style: none;
+    
+}
+
 
 
 .panel-pipeline{

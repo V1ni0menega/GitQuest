@@ -9,7 +9,23 @@
 <body>
     <div id="app">
         <main  class="panel-terminal">
-            <p>terminal</p>
+            <header class="terminal-header">
+                <span class="button dot-red"></span>
+                <span class="button dot-yellow"></span>
+                <span class="button dot-green"></span>
+
+                <span class="terminal-title">guest@gitquest — bash</span>
+            </header>
+            
+            <ul class="terminal-output">
+                <li>Bem-vindo ao GitQuest. Digite 'help' para ver os comandos disponíveis.</li>
+            </ul>
+
+            <footer class="terminal-prompt"> 
+                <span class="prompt-label">guest@gitquest:~$</span>    
+                <input type="text" class="prompt-input" autofocus autocomplete="off" spellcheck="false">
+            </footer>
+            
         </main>
         
         <section class="panel-pipeline">
