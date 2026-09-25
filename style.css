@@ -8,7 +8,8 @@
     --text-secondary: #808080;
 
     /* === Cores de Acento === */
-    --accent-terminal: #06b6d4;
+    --accent-command: #ffffff;
+    --accent-terminal: #06b5d4ad;
     --accent-color: #f97316;
 
     /* === Cores Semânticas (estados) === */
@@ -90,7 +91,9 @@ body {
 
 .terminal-header{
     display: flex;
-    margin-bottom: 20px;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
     gap: var(--spacing-sm);
     align-items:center;
 }
@@ -105,13 +108,29 @@ body {
 
 }
 .terminal-output{
+    padding-top: 0.5rem;
     flex: 1;    
     overflow-y: auto;
     list-style: none;
     
 }
-
-
+.terminal-prompt{
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+.terminal-prompt input{
+    flex: 1;
+    background-color: transparent;
+    border:none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: inherit;
+}
+.prompt-label{
+    color: var(--accent-terminal);
+}
 
 .panel-pipeline{
     grid-area: pipeline;
