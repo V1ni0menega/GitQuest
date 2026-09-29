@@ -114,10 +114,14 @@ body {
     list-style: none;
     
 }
+.terminal-output li {
+    padding: 2px;
+}
 .terminal-prompt{
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    
 }
 .terminal-prompt input{
     flex: 1;
@@ -127,27 +131,188 @@ body {
     color: var(--text-primary);
     font-family: inherit;
     font-size: inherit;
+
 }
+
 .prompt-label{
     color: var(--accent-terminal);
 }
 
-.panel-pipeline{
+
+/* Painel Missões */
+.panel-missions{
+    grid-area: missions;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+}
+
+.mission-header{
+    display:flex;
+    justify-content:space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+.mission-badge{
+    background-color: var(--background-primary);
+    color: var(--accent-color);
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: bold;
+}
+
+.mission-description{
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+.mission-instruction{
+    background-color: var(--background-primary);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    border-left: 5px solid var(--accent-color);
+    code{
+        display: block;
+        padding-top: var(--spacing-sm);
+        color: var(--accent-terminal);
+        font-weight: bold;
+    }
+}
+
+/* Painel de Estágios (Pipeline) */
+.panel-pipeline {
     grid-area: pipeline;
     background-color: var(--background-secondary);
     border-radius: var(--border-radius-md);
     padding: var(--spacing-lg);
 }
 
-
-.panel-missions{
-    grid-area: missions;
-    background-color: var(--background-secondary);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-
+.pipeline-header {
+    margin-bottom: var(--spacing-lg);
 }
 
+.pipeline-header h2 {
+    font-size: var(--font-size-xl);
+    color: var(--text-primary);
+}
+
+.pipeline-stages {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+    min-height: 200px; /* Altura mínima para visualização */
+}
+
+/* Cartão de Estágio */
+.stage-card {
+    background-color: var(--background-primary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.stage-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.stage-title {
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+}
+
+.stage-files {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    min-height: 100px;
+}
+
+/* Arquivo (Item dentro do estágio) */
+.file-item {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+    transform: translateX(4px);
+}
+
+.file-name {
+    font-weight: 600;
+    color: #4ade80;
+}
+
+.file-status {
+    font-size: var(--font-size-sm);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+    font-weight: bold;
+}
+
+.status-untracked {
+    background-color: #4b5563;
+    color: #9ca3af;
+}
+
+.status-modified {
+    background-color: #b91c1c;
+    color: #fca5a5;
+}
+
+.status-staged {
+    background-color: #15803d;
+    color: #a7f3d0;
+}
+
+.status-committed {
+    background-color: #1d4ed8;
+    color: #bfdbfe;
+}
+
+/* Cores por estágio */
+.stage-working .stage-title {
+    color: #ef4444; /* Vermelho para stage de trabalho (arquivos não rastreados) */
+}
+
+.stage-staging .stage-title {
+    color: #f59e0b; /* Laranja para staging (arquivos modificados/prontos) */
+}
+
+.stage-repo .stage-title {
+    color: #10b981; /* Verde para repository (commits) */
+}
+
+/* Layout para quando há muitos arquivos (fallback) */
+@media (max-width: 1200px) {
+    .pipeline-stages {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .pipeline-stages {
+        grid-template-columns: 1fr;
+    }
+}
 
 
 

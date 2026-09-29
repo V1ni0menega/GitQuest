@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitQuest</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="app">
-        <main  class="panel-terminal">
+        <main class="panel-terminal">
             <header class="terminal-header">
                 <span class="button dot-red"></span>
                 <span class="button dot-yellow"></span>
@@ -16,26 +18,67 @@
 
                 <span class="terminal-title">guest@gitquest — bash</span>
             </header>
-            
+
             <ul class="terminal-output">
                 <li>Bem-vindo ao GitQuest. Digite 'help' para ver os comandos disponíveis.</li>
             </ul>
 
-            <footer class="terminal-prompt"> 
-                <span class="prompt-label">guest@gitquest:~$</span>    
+            <footer class="terminal-prompt">
+                <span class="prompt-label">guest@gitquest:~$</span>
                 <input type="text" class="prompt-input" autofocus autocomplete="off" spellcheck="false">
             </footer>
-            
+
         </main>
-        
+
         <section class="panel-pipeline">
-            <p>pipeline</p>
+            <header class="pipeline-header">
+                <h2>Git Flow</h2>
+            </header>
+
+            <div class="pipeline-stages">
+                <!-- Estágio 1: Working Directory -->
+                <div class="stage-card stage-working">
+                    <h3 class="stage-title">Working Directory</h3>
+                    <div class="stage-files">
+                        <!-- Arquivos não rastreados/modificados aparecerão aqui -->
+                    </div>
+                </div>
+
+                <!-- Estágio 2: Staging Area -->
+                <div class="stage-card stage-staging">
+                    <h3 class="stage-title">Staging Area</h3>
+                    <div class="stage-files">
+                        <!-- Arquivos preparados com git add aparecerão aqui -->
+                    </div>
+                </div>
+
+                <!-- Estágio 3: Repository -->
+                <div class="stage-card stage-repo">
+                    <h3 class="stage-title">Repository</h3>
+                    <div class="stage-files">
+                        <!-- Commits gravados aparecerão aqui -->
+                    </div>
+                </div>
+            </div>
         </section>
-        
         <aside class="panel-missions">
-            <p>missions</p>
+            <header class="mission-header">
+                <h2 class="mission-title">Missão 01: O Início</h2>
+                <span class="mission-badge">+50 XP</span>
+            </header>
+
+            <p class="mission-description">
+                Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a
+                rastrear seus arquivos.
+            </p>
+
+            <div class="mission-instruction">
+                <p>Comando esperado:</p>
+                <code>git init</code>
+            </div>
         </aside>
     </div>
     <script src="app.js"></script>
 </body>
+
 </html>
