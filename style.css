@@ -115,8 +115,18 @@ body {
     
 }
 .terminal-output li {
-    padding: 2px;
+    padding: 2px;    
 }
+.terminal-output li.success {
+    color: var(--success-return);
+}
+.terminal-output li.error {
+    color: var(--error-return);
+}
+.terminal-output li.warning {
+    color: var(--warning-return);
+}
+
 .terminal-prompt{
     display: flex;
     align-items: center;
