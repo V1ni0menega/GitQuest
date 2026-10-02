@@ -18,6 +18,7 @@ const terminalOutput = document.querySelector('.terminal-output')
 
 const workingFiles  = document.querySelector('.stage-working .stage-files')
 const stagingFiles  = document.querySelector('.stage-staging .stage-files')
+const repositoryFiles = document.querySelector('.stage-repo .stage-files')
 
 
 
@@ -31,6 +32,7 @@ const stagingFiles  = document.querySelector('.stage-staging .stage-files')
 const gitState = {
     initialized: false,
     filesAdded: false,
+    comitted : false, 
     workingFiles: [],
     stagedFiles:[]
 
@@ -43,6 +45,20 @@ const gitState = {
 // ─────────────────────────────────────────────
 
 // Imprime uma linha de texto no terminal visual
+function parserCommand(command){
+    if(command.includes('-m')){
+        const parts = command.split('-m')
+        
+        const base= parts[0].trim()
+
+        const msg = parts[1].trim()
+            return {base,msg}
+        }
+        return{
+            base:command.trim(),msg: ''
+        }
+    }
+
 function printOutput(message,type = '') {
     const li = document.createElement('li')
     li.textContent = message
@@ -50,6 +66,7 @@ function printOutput(message,type = '') {
         li.classList.add(type)
     }
     terminalOutput.appendChild(li)
+    terminalOutput.scrollTop = terminalOutput.scrollHeight  // auto-scroll para o fim
 }
     
 function createFileItem(name){
@@ -68,7 +85,9 @@ function createFileItem(name){
 
 // Interpreta o comando digitado e executa a ação correspondente
 function processCommand(command) {
-    switch (command) {
+    const parsed = parserCommand(command)
+
+        switch(parsed.base){
      case 'git init':
         if (gitState.initialized) {
             printOutput('Repositório já inicializado.','warning')
@@ -89,11 +108,34 @@ function processCommand(command) {
             stagingFiles.appendChild(createFileItem('app.js'))
 
             printOutput('Arquivos adicionados ao staging area!','success')
-            
         } else if (gitState.initialized && gitState.filesAdded) {
             printOutput('Arquivos já adicionados ao staging.','warning')
         } else {
             printOutput('Repositório não inicializado. Execute "git init" primeiro.', 'error')
+        }
+        break
+     case 'git commit':
+        if (gitState.initialized && gitState.filesAdded && !gitState.comitted){
+            gitState.comitted = true
+            stagingFiles.innerHTML = ''
+            repositoryFiles.appendChild(createFileItem('index.html'))
+            repositoryFiles.appendChild(createFileItem('style.css'))
+            repositoryFiles.appendChild(createFileItem('app.js'))
+
+            printOutput('[main (root-commit)] ' + parsed.msg, 'success')
+            printOutput('3 files changed', 'success')
+        }
+        else if (gitState.initialized && gitState.filesAdded && gitState.comitted){
+            printOutput('Nada para commitar','warning')
+        }
+        else if (!gitState.initialized){
+            printOutput('Repositório não inicializado. Execute "git init" primeiro.','error')
+        }
+        else if (!gitState.filesAdded){
+            printOutput('Erro: você precisa usar "git add" antes de "git commit".','error')
+        }
+        else {
+            printOutput('Erro: O que você está tentando commitar?','error')
         }
         break
         default:
