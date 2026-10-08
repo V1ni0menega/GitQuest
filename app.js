@@ -34,7 +34,9 @@ const gitState = {
     filesAdded: false,
     comitted : false, 
     workingFiles: [],
-    stagedFiles:[]
+    stagedFiles:[],
+    history:[],
+    position: 0,
 
 }
 
@@ -156,10 +158,43 @@ terminal.addEventListener('click', function () {
 
 // Detecta o Enter no input e processa o comando
 promptInput.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-        const command = promptInput.value.trim()
-        printOutput('guest@gitquest:~$ ' + command)
-        processCommand(command)
-        promptInput.value = ''
+    switch (event.key) {
+        case 'Enter':
+            const command = promptInput.value.trim()
+
+            if (command !== '') {
+                printOutput('guest@gitquest:~$ ' + command)
+                gitState.history.push(command)
+                gitState.position = gitState.history.length
+                processCommand(command)
+            } else {
+                printOutput('guest@gitquest:~$ ')
+            }
+
+            promptInput.value = ''
+            break
+
+        case 'ArrowUp':
+            event.preventDefault()
+            if (gitState.history.length > 0 && gitState.position > 0) {
+                gitState.position--
+                promptInput.value = gitState.history[gitState.position]
+            }
+            break
+
+        case 'ArrowDown':
+            event.preventDefault()
+            if (gitState.history.length > 0) {
+                if (gitState.position < gitState.history.length - 1) {
+                    gitState.position++
+                    promptInput.value = gitState.history[gitState.position]
+                } else if (gitState.position === gitState.history.length - 1) {
+                    gitState.position = gitState.history.length
+                    promptInput.value = ''
+                }
+            }
+            break
     }
 })
+
+
