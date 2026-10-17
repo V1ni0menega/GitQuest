@@ -20,6 +20,14 @@ const workingFiles  = document.querySelector('.stage-working .stage-files')
 const stagingFiles  = document.querySelector('.stage-staging .stage-files')
 const repositoryFiles = document.querySelector('.stage-repo .stage-files')
 
+/// seletores para o estado de missões
+
+const missionTitleElement = document.querySelector('.mission-title')
+const missionDescriptionElement = document.querySelector('.mission-description')
+const missionXpElement = document.querySelector('.mission-badge')
+const missionCommandElement = document.querySelector('.mission-instruction code')
+
+
 
 
 
@@ -37,8 +45,31 @@ const gitState = {
     stagedFiles:[],
     history:[],
     position: 0,
+    xp : 0,
+    currentMissionIndex: 0,
 
 }
+const missions = [
+    {
+        title: "Missão 01: O Início",
+        xp: 50,
+        description: "Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a rastrear seus arquivos.",
+        command: "git init"
+    },
+    {
+        title: "Missão 02: Preparando Arquivos",
+        xp: 50,
+        description: "Arquivos foram detectados no seu Working Directory. Adicione-os à Staging Area para prepará-los para o commit.",
+        command: "git add"
+    },
+    {
+        title: "Missão 03: O Primeiro Commit",
+        xp: 100,
+        description: "Seus arquivos estão no Staging. Salve o primeiro snapshot da história do repositório criando o seu commit.",
+        command: "git commit"
+    }
+]
+
 
 
 // ─────────────────────────────────────────────
@@ -80,6 +111,25 @@ function createFileItem(name){
     return div
 }
 
+function renderMission() {
+    const current = missions[gitState.currentMissionIndex]
+
+    if (current) {
+        missionTitleElement.textContent = current.title
+        missionDescriptionElement.textContent = current.description
+        missionXpElement.textContent = '+' + current.xp + ' XP'
+        missionCommandElement.textContent = current.command
+    } else {
+        // 🎉 ESTADO DE VITÓRIA (quando terminar todas as missões)!
+        missionTitleElement.textContent = '🏆 Trilha Concluída!'
+        missionDescriptionElement.textContent = 'Parabéns, dev! Você dominou o ciclo completo do Git: init, add e commit!'
+        missionXpElement.textContent = 'Nível 1 • ' + gitState.xp + ' XP'
+        missionCommandElement.textContent = 'git status / git log'
+    }
+}
+
+
+
 // ─────────────────────────────────────────────
 // 4. LÓGICA
 // Funções que processam comandos e atualizam o estado
@@ -99,6 +149,15 @@ function processCommand(command) {
             workingFiles.appendChild(createFileItem('style.css'))
             workingFiles.appendChild(createFileItem('app.js'))
             printOutput('Repositório Git inicializado com sucesso!','success')
+
+            gitState.xp += 50
+
+            gitState.currentMissionIndex ++
+            
+            renderMission()
+
+            printOutput('⭐ Missão 01 Concluída! +50 XP (Total: ' + gitState.xp + ' XP)', 'success')
+
         }
         break
      case 'git add':
@@ -110,6 +169,13 @@ function processCommand(command) {
             stagingFiles.appendChild(createFileItem('app.js'))
 
             printOutput('Arquivos adicionados ao staging area!','success')
+
+
+            gitState.xp += 50
+            gitState.currentMissionIndex++
+            renderMission()
+            printOutput('⭐ Missão 02 Concluída! +50 XP (Total: ' + gitState.xp + ' XP)', 'success')
+            
         } else if (gitState.initialized && gitState.filesAdded) {
             printOutput('Arquivos já adicionados ao staging.','warning')
         } else {
@@ -126,6 +192,11 @@ function processCommand(command) {
 
             printOutput('[main (root-commit)] ' + parsed.msg, 'success')
             printOutput('3 files changed', 'success')
+
+            gitState.xp += 100
+            gitState.currentMissionIndex++
+            renderMission()
+            printOutput('⭐ Missão 03 Concluída! +100 XP (Total: ' + gitState.xp + ' XP)', 'success')
         }
         else if (gitState.initialized && gitState.filesAdded && gitState.comitted){
             printOutput('Nada para commitar','warning')
@@ -145,6 +216,7 @@ function processCommand(command) {
         break
     }
 }
+
 
 // ─────────────────────────────────────────────
 // 5. EVENTOS
