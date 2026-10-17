@@ -63,8 +63,13 @@
         </section>
         <aside class="panel-missions">
             <header class="mission-header">
-                <h2 class="mission-title">Missão 01: O Início</h2>
-                <span class="mission-badge">+50 XP</span>
+                <div class="mission-header-left">
+                    <h2 class="mission-title" id="mission-title-trigger" title="Clique para abrir a trilha de missões">Missão 01: O Início</h2>
+                </div>
+                <div class="mission-header-actions">
+                    <button class="btn-open-modal" id="open-missions-btn" title="Abrir Trilha de Missões">🗺️ Trilha</button>
+                    <span class="mission-badge">+50 XP</span>
+                </div>
             </header>
 
             <p class="mission-description">
@@ -78,6 +83,81 @@
             </div>
         </aside>
     </div>
+
+    <!-- Badge Global de Status (Mockup) -->
+    <div class="global-stats-pill">
+        <span class="pill-label">XP</span>
+        <span class="pill-val" id="global-xp">0</span>
+        <span class="pill-sep">·</span>
+        <span class="pill-icon">⭐</span>
+        <span class="pill-stars" id="global-stars">0/3</span>
+    </div>
+
+    <!-- Modal: Selecione uma Missão (Fiel ao Mockup) -->
+    <div id="missions-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-window">
+            <header class="modal-header">
+                <div class="modal-window-controls">
+                    <button class="modal-dot dot-red" id="close-modal-dot" title="Fechar"></button>
+                    <span class="modal-dot dot-yellow"></span>
+                    <span class="modal-dot dot-green"></span>
+                </div>
+                <span id="modal-title" class="modal-title">• Selecione uma missão</span>
+                <button class="modal-close-btn" id="close-modal-btn" aria-label="Fechar">&times;</button>
+            </header>
+
+            <nav class="modal-tabs">
+                <button class="tab-btn active" data-tab="fundamentos">Fundamentos</button>
+                <button class="tab-btn" data-tab="branches">Branches</button>
+                <button class="tab-btn" data-tab="remoto">Remoto</button>
+                <button class="tab-btn" data-tab="conflitos">Conflitos</button>
+                <button class="tab-btn" data-tab="desfazer">Desfazer</button>
+                <button class="tab-btn" data-tab="historico">Histórico</button>
+            </nav>
+
+            <div class="modal-body">
+                <!-- Módulo 1: Fundamentos Locais -->
+                <section class="module-section">
+                    <h3 class="module-title">Módulo 1 — Fundamentos Locais</h3>
+                    <p class="module-subtitle">git init, git add, git commit e o ciclo de vida do arquivo.</p>
+                    <p class="module-current-step" id="module-step-desc">1: Seu primeiro commit</p>
+                    <div class="level-chips" id="module-1-levels">
+                        <button class="level-btn active" data-mission-index="0" title="Fase 1: git init">1</button>
+                        <button class="level-btn" data-mission-index="1" title="Fase 2: git add">2</button>
+                        <button class="level-btn" data-mission-index="2" title="Fase 3: git commit">3</button>
+                        <button class="level-btn locked" data-mission-index="3" title="Em breve" disabled>4</button>
+                    </div>
+                </section>
+
+                <!-- Módulo 2: Branches & Fusões -->
+                <section class="module-section module-locked">
+                    <h3 class="module-title">Módulo 2 — Branches & Fusões</h3>
+                    <p class="module-subtitle">git branch, git switch e merges fast-forward e de três vias.</p>
+                    <p class="module-current-step">1: Criando sua primeira branch</p>
+                    <div class="level-chips">
+                        <button class="level-btn locked" disabled>1</button>
+                        <button class="level-btn locked" disabled>2</button>
+                        <button class="level-btn locked" disabled>3</button>
+                        <button class="level-btn locked" disabled>4</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner Retrô 8-Bit (Level Up / Conquista) -->
+    <div id="retro-toast" class="retro-toast hidden" aria-live="polite">
+        <div class="retro-box">
+            <div class="retro-header">
+                <span class="retro-star">★</span>
+                <span class="retro-badge">LEVEL UP!</span>
+                <span class="retro-star">★</span>
+            </div>
+            <div class="retro-msg" id="retro-msg">+50 XP CONQUISTADO!</div>
+            <div class="retro-sub" id="retro-sub">MISSÃO CUMPRIDA</div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 
