@@ -56,19 +56,48 @@ const gitState = {
 // ─────────────────────────────────────────────
 
 // Imprime uma linha de texto no terminal visual
-function parserCommand(command){
-    if(command.includes('-m')){
-        const parts = command.split('-m')
-        
-        const base= parts[0].trim()
+function parserCommand(command) {
+    const trimmed = command.trim()
 
-        const msg = parts[1].trim()
-            return {base,msg}
-        }
-        return{
-            base:command.trim(),msg: ''
+    if (trimmed === 'clear' || trimmed === 'cls') {
+        terminalOutput.innerHTML = ''
+        return { base: 'clear', arg: '', msg: '' }
+    }
+
+    if (trimmed.includes('-help') || trimmed === 'help') {
+        return { base: 'help', arg: '', msg: '' }
+    }
+
+    // 1. Caso com flag -m (ex: git commit -m "msg")
+    if (trimmed.includes('-m')) {
+        const parts = trimmed.split('-m')
+        return {
+            base: parts[0].trim(),
+            arg: '',
+            msg: parts[1].trim()
         }
     }
+
+    // 2. Comandos com subargumento (ex: git branch feature ou git checkout feature)
+    const words = trimmed.split(' ')
+    if (words[0] === 'git' && words.length > 2) {
+        const subCommand = words[1]
+        if (subCommand === 'branch' || subCommand === 'checkout') {
+            return {
+                base: 'git ' + subCommand,
+                arg: words[2],
+                msg: ''
+            }
+        }
+    }
+
+    // 3. Comandos normais (ex: git init, git add, git branch, git commit)
+    return {
+        base: trimmed,
+        arg: '',
+        msg: ''
+    }
+}
 
 function printOutput(message,type = '') {
     const li = document.createElement('li')
@@ -122,19 +151,60 @@ function processCommand(command) {
     const parsed = parserCommand(command)
 
     switch (parsed.base) {
+        case 'clear':
+        case 'cls':
+            break
+
+        case 'help':
+            printOutput('Comandos disponíveis: git init, git add, git commit -m "...", git branch, git branch <nome>, git checkout <nome>, clear', 'info')
+            break
+
         case 'git branch':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
                 break
             }
 
-            gitState.branches.forEach(function (branch) {
-                if (branch === gitState.currentBranch) {
-                    printOutput('* ' + branch, 'success')
+            // Se passou o nome (ex: git branch feature-login) ➔ CRIA a nova branch
+            if (parsed.arg) {
+                if (gitState.branches.includes(parsed.arg)) {
+                    printOutput(`fatal: a branch named '${parsed.arg}' already exists`, 'error')
                 } else {
-                    printOutput('  ' + branch)
+                    gitState.branches.push(parsed.arg)
+                    printOutput(`Branch '${parsed.arg}' criada com sucesso!`, 'success')
                 }
-            })
+            } 
+            // Se NÃO passou nome (apenas "git branch") ➔ LISTA as branches existentes
+            else {
+                gitState.branches.forEach(function (branch) {
+                    if (branch === gitState.currentBranch) {
+                        printOutput('* ' + branch, 'success')
+                    } else {
+                        printOutput('  ' + branch)
+                    }
+                })
+            }
+            break
+
+        case 'git checkout':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            if (!parsed.arg) {
+                printOutput('fatal: branch name required for checkout', 'error')
+                break
+            }
+
+            if (!gitState.branches.includes(parsed.arg)) {
+                printOutput(`error: pathspec '${parsed.arg}' did not match any file(s) known to git`, 'error')
+            } else if (parsed.arg === gitState.currentBranch) {
+                printOutput(`Already on '${parsed.arg}'`, 'warning')
+            } else {
+                gitState.currentBranch = parsed.arg
+                printOutput(`Switched to branch '${parsed.arg}'`, 'success')
+            }
             break
         case 'git init':
             if (gitState.initialized) {
@@ -210,8 +280,6 @@ function processCommand(command) {
         break
     }
 }
-
-
 // ─────────────────────────────────────────────
 // 5. EVENTOS
 // Escutam interações do usuário e disparam a lógica
