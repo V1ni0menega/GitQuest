@@ -1,9 +1,12 @@
 // =============================================================
 // app.js — Orquestrador do GitQuest
 // Conecta a Engine de Git à Interface do Usuário (UI)
-// Estrutura: Seletores → Estado → Auxiliares → Lógica → Eventos
+// Estrutura: Imports → Seletores → Estado → Auxiliares → Lógica → Eventos
 // =============================================================
 
+import { missions } from './js/missions-data.js'
+import { showRetroCelebration } from './js/toast.js'
+import { closeMissionsModal, updateModalAndStatsUI, initModalEvents } from './js/modal.js'
 
 // ─────────────────────────────────────────────
 // 1. SELETORES
@@ -26,23 +29,6 @@ const missionDescriptionElement = document.querySelector('.mission-description')
 const missionXpElement          = document.querySelector('.mission-badge')
 const missionCommandElement     = document.querySelector('.mission-instruction code')
 
-// Seletores do Modal de Missões (Mockup)
-const missionsModal       = document.getElementById('missions-modal')
-const openMissionsBtn     = document.getElementById('open-missions-btn')
-const missionTitleTrigger = document.getElementById('mission-title-trigger')
-const closeModalBtn       = document.getElementById('close-modal-btn')
-const closeModalDot       = document.getElementById('close-modal-dot')
-const module1LevelButtons = document.querySelectorAll('#module-1-levels .level-btn')
-const moduleStepDesc      = document.getElementById('module-step-desc')
-const tabButtons          = document.querySelectorAll('.modal-tabs .tab-btn')
-
-// Seletores do Pill Global e Toast Retrô 8-Bit
-const globalXpElement     = document.getElementById('global-xp')
-const globalStarsElement  = document.getElementById('global-stars')
-const retroToastElement   = document.getElementById('retro-toast')
-const retroMsgElement     = document.getElementById('retro-msg')
-const retroSubElement     = document.getElementById('retro-sub')
-
 // ─────────────────────────────────────────────
 // 2. ESTADO
 // Objeto central que representa a "memória" da aplicação.
@@ -58,28 +44,7 @@ const gitState = {
     position: 0,
     xp : 0,
     currentMissionIndex: 0,
-
 }
-const missions = [
-    {
-        title: "Missão 01: O Início",
-        xp: 50,
-        description: "Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a rastrear seus arquivos.",
-        command: "git init"
-    },
-    {
-        title: "Missão 02: Preparando Arquivos",
-        xp: 50,
-        description: "Arquivos foram detectados no seu Working Directory. Adicione-os à Staging Area para prepará-los para o commit.",
-        command: "git add"
-    },
-    {
-        title: "Missão 03: O Primeiro Commit",
-        xp: 100,
-        description: "Seus arquivos estão no Staging. Salve o primeiro snapshot da história do repositório criando o seu commit.",
-        command: "git commit"
-    }
-]
 
 
 
@@ -122,96 +87,6 @@ function createFileItem(name){
     return div
 }
 
-// Sintetizador de Som Retrô 8-Bit (Web Audio API nativa)
-function playRetro8BitSound() {
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext
-        if (!AudioContext) return
-        const ctx = new AudioContext()
-        // Acorde alegre de 4 notas em onda quadrada (Estilo Game Boy / NES)
-        const notes = [523.25, 659.25, 783.99, 1046.50] // C5, E5, G5, C6
-        notes.forEach((freq, index) => {
-            const osc = ctx.createOscillator()
-            const gain = ctx.createGain()
-            osc.type = 'square'
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.08)
-            gain.gain.setValueAtTime(0.06, ctx.currentTime + index * 0.08)
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.08 + 0.14)
-            osc.connect(gain)
-            gain.connect(ctx.destination)
-            osc.start(ctx.currentTime + index * 0.08)
-            osc.stop(ctx.currentTime + index * 0.08 + 0.15)
-        })
-    } catch (e) {
-        // Fallback silencioso
-    }
-}
-
-// Dispara o Toast Comemorativo 8-Bit com Efeito Sonoro
-let retroToastTimeout = null
-function showRetroCelebration(msg, sub = 'MISSÃO CUMPRIDA') {
-    if (!retroToastElement) return
-    retroMsgElement.textContent = msg
-    retroSubElement.textContent = sub
-    retroToastElement.classList.remove('hidden')
-    playRetro8BitSound()
-
-    if (retroToastTimeout) clearTimeout(retroToastTimeout)
-    retroToastTimeout = setTimeout(() => {
-        retroToastElement.classList.add('hidden')
-    }, 2800)
-}
-
-// Controle do Modal de Missões
-function openMissionsModal() {
-    if (!missionsModal) return
-    missionsModal.classList.remove('hidden')
-    updateModalAndStatsUI()
-}
-
-function closeMissionsModal() {
-    if (!missionsModal) return
-    missionsModal.classList.add('hidden')
-}
-
-// Atualiza o visual dos botões no Modal e o Pill Global de XP/Stars
-function updateModalAndStatsUI() {
-    // 1. Atualiza Stats Globais no Topo
-    if (globalXpElement) globalXpElement.textContent = gitState.xp
-    if (globalStarsElement) {
-        const completedStars = Math.min(gitState.currentMissionIndex, missions.length)
-        globalStarsElement.textContent = `${completedStars}/${missions.length}`
-    }
-
-    // 2. Atualiza Botões de Nível do Módulo 1 (Fundamentos)
-    module1LevelButtons.forEach((btn, index) => {
-        btn.classList.remove('completed', 'active', 'locked')
-        if (index < gitState.currentMissionIndex) {
-            btn.classList.add('completed')
-            btn.disabled = false
-            btn.title = `Fase ${index + 1}: Concluída! Clique para revisar.`
-        } else if (index === gitState.currentMissionIndex) {
-            btn.classList.add('active')
-            btn.disabled = false
-            btn.title = `Fase ${index + 1}: Em andamento!`
-        } else {
-            btn.classList.add('locked')
-            btn.disabled = true
-            btn.title = `Fase ${index + 1}: Bloqueada`
-        }
-    })
-
-    // 3. Atualiza Subtítulo da Fase Atual
-    if (moduleStepDesc) {
-        const curr = missions[gitState.currentMissionIndex]
-        if (curr) {
-            moduleStepDesc.textContent = `${gitState.currentMissionIndex + 1}: ${curr.title}`
-        } else {
-            moduleStepDesc.textContent = '🎉 Todas as fases concluídas com sucesso!'
-        }
-    }
-}
-
 function renderMission() {
     const current = missions[gitState.currentMissionIndex]
 
@@ -228,8 +103,8 @@ function renderMission() {
         missionCommandElement.textContent = 'git status / git log'
     }
 
-    // Sincroniza o Modal e o Pill Global
-    updateModalAndStatsUI()
+    // Sincroniza o Modal e o Pill Global com os dados atuais
+    updateModalAndStatsUI(gitState.currentMissionIndex, gitState.xp)
 }
 
 
@@ -373,52 +248,19 @@ promptInput.addEventListener('keydown', function (event) {
 })
 
 // ─── Eventos do Modal de Missões ───
-
-// Abertura do Modal
-if (openMissionsBtn) openMissionsBtn.addEventListener('click', openMissionsModal)
-if (missionTitleTrigger) missionTitleTrigger.addEventListener('click', openMissionsModal)
-
-// Fechamento do Modal
-if (closeModalBtn) closeModalBtn.addEventListener('click', closeMissionsModal)
-if (closeModalDot) closeModalDot.addEventListener('click', closeMissionsModal)
-
-// Fechar ao clicar no fundo escuro (backdrop)
-if (missionsModal) {
-    missionsModal.addEventListener('click', function (event) {
-        if (event.target === missionsModal) {
-            closeMissionsModal()
-        }
-    })
-}
-
-// Fechar ao pressionar a tecla Escape
-window.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && missionsModal && !missionsModal.classList.contains('hidden')) {
-        closeMissionsModal()
-    }
-})
-
-// Alternância de Abas no Modal
-tabButtons.forEach(btn => {
-    btn.addEventListener('click', function () {
-        tabButtons.forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        if (btn.dataset.tab !== 'fundamentos') {
-            printOutput(`ℹ️ Módulo "${btn.textContent}" será liberado nas próximas atualizações!`, 'warning')
-        }
-    })
-})
-
-// Navegação direta pelas fases do Módulo 1 no Modal
-module1LevelButtons.forEach((btn, index) => {
-    btn.addEventListener('click', function () {
-        if (!btn.disabled && index <= gitState.currentMissionIndex) {
+// Inicializa os ouvintes do modal através do módulo desacoplado
+initModalEvents({
+    onSelectMission: (index) => {
+        if (index <= gitState.currentMissionIndex) {
             gitState.currentMissionIndex = index
             renderMission()
             closeMissionsModal()
             printOutput(`🎯 Navegando para ${missions[index].title}!`)
         }
-    })
+    },
+    onTabWarning: (tabName) => {
+        printOutput(`ℹ️ Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
+    }
 })
 
 // ─── Inicialização da Aplicação ───
