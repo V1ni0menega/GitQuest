@@ -29,6 +29,10 @@ const missionDescriptionElement = document.querySelector('.mission-description')
 const missionXpElement          = document.querySelector('.mission-badge')
 const missionCommandElement     = document.querySelector('.mission-instruction code')
 
+// Seletores do Terminal e Pipeline
+const promptLabel          = document.getElementById('prompt-label')
+const pipelineBranchBadge  = document.getElementById('pipeline-branch-badge')
+
 // ─────────────────────────────────────────────
 // 2. ESTADO
 // Objeto central que representa a "memória" da aplicação.
@@ -74,27 +78,40 @@ function parserCommand(command) {
         return {
             base: parts[0].trim(),
             arg: '',
+            flag: '-m',
             msg: parts[1].trim()
         }
     }
 
-    // 2. Comandos com subargumento (ex: git branch feature ou git checkout feature)
+    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature ou git branch feature)
     const words = trimmed.split(' ')
     if (words[0] === 'git' && words.length > 2) {
+        // Caso especial: git checkout -b <nome>
+        if (words[1] === 'checkout' && words[2] === '-b' && words.length > 3) {
+            return {
+                base: 'git checkout',
+                arg: words[3],
+                flag: '-b',
+                msg: ''
+            }
+        }
+
         const subCommand = words[1]
         if (subCommand === 'branch' || subCommand === 'checkout') {
             return {
                 base: 'git ' + subCommand,
                 arg: words[2],
+                flag: '',
                 msg: ''
             }
         }
     }
 
-    // 3. Comandos normais (ex: git init, git add, git branch, git commit)
+    // 3. Comandos normais (ex: git init, git add, git branch, git commit, git status)
     return {
         base: trimmed,
         arg: '',
+        flag: '',
         msg: ''
     }
 }
@@ -109,13 +126,34 @@ function printOutput(message,type = '') {
     terminalOutput.scrollTop = terminalOutput.scrollHeight  // auto-scroll para o fim
 }
     
-function createFileItem(name){
+function createFileItem(name, branchTag = '') {
     const div = document.createElement('div')
-
     div.className = 'file-item'
-    div.textContent = name
-    
+
+    if (branchTag) {
+        div.innerHTML = `${name} <span class="file-branch-badge ${branchTag === 'main' ? 'badge-main' : 'badge-feature'}">${branchTag}</span>`
+    } else {
+        div.textContent = name
+    }
+
     return div
+}
+
+function updatePromptAndPipelineBranch() {
+    if (promptLabel) {
+        if (gitState.initialized) {
+            promptLabel.innerHTML = `guest@gitquest <span class="prompt-branch">(${gitState.currentBranch})</span>:~$ `
+        } else {
+            promptLabel.textContent = 'guest@gitquest:~$ '
+        }
+    }
+    if (pipelineBranchBadge) {
+        pipelineBranchBadge.textContent = `HEAD ➔ ${gitState.currentBranch}`
+        pipelineBranchBadge.style.borderColor = 'var(--accent-color)'
+        setTimeout(() => {
+            pipelineBranchBadge.style.borderColor = 'var(--accent-terminal)'
+        }, 350)
+    }
 }
 
 function renderMission() {
@@ -129,13 +167,14 @@ function renderMission() {
     } else {
         // 🎉 ESTADO DE VITÓRIA (quando terminar todas as missões)!
         missionTitleElement.textContent = '🏆 Trilha Concluída!'
-        missionDescriptionElement.textContent = 'Parabéns, dev! Você dominou o ciclo completo do Git: init, add e commit!'
+        missionDescriptionElement.textContent = 'Parabéns, dev! Você dominou o ciclo completo do Git: init, add, commit e branches!'
         missionXpElement.textContent = 'Nível 1 • ' + gitState.xp + ' XP'
-        missionCommandElement.textContent = 'git status / git log'
+        missionCommandElement.textContent = 'git status / git branch'
     }
 
-    // Sincroniza o Modal e o Pill Global com os dados atuais
+    // Sincroniza o Modal, o Pill Global e a visualização da branch
     updateModalAndStatsUI(gitState.currentMissionIndex, gitState.xp)
+    updatePromptAndPipelineBranch()
 }
 
 
@@ -156,7 +195,37 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add, git commit -m "...", git branch, git branch <nome>, git checkout <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add, git commit -m "...", git status, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
+            break
+
+        case 'git status':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            printOutput(`On branch ${gitState.currentBranch}`, 'info')
+
+            if (!gitState.comitted) {
+                printOutput('No commits yet', 'warning')
+            }
+
+            if (!gitState.filesAdded && !gitState.comitted) {
+                printOutput('Untracked files:', 'warning')
+                printOutput('  (use "git add <file>..." to include in what will be committed)', 'info')
+                printOutput('	app.js', 'error')
+                printOutput('	index.html', 'error')
+                printOutput('	style.css', 'error')
+                printOutput('nothing added to commit but untracked files present (use "git add" to track)')
+            } else if (gitState.filesAdded && !gitState.comitted) {
+                printOutput('Changes to be committed:', 'info')
+                printOutput('  (use "git restore --staged <file>..." to unstage)', 'info')
+                printOutput('	new file:   app.js', 'success')
+                printOutput('	new file:   index.html', 'success')
+                printOutput('	new file:   style.css', 'success')
+            } else {
+                printOutput('nothing to commit, working tree clean', 'success')
+            }
             break
 
         case 'git branch':
@@ -167,6 +236,10 @@ function processCommand(command) {
 
             // Se passou o nome (ex: git branch feature-login) ➔ CRIA a nova branch
             if (parsed.arg) {
+                if (!gitState.comitted) {
+                    printOutput(`fatal: not a valid object name: 'main' (crie o primeiro commit antes de criar branches!)`, 'error')
+                    break
+                }
                 if (gitState.branches.includes(parsed.arg)) {
                     printOutput(`fatal: a branch named '${parsed.arg}' already exists`, 'error')
                 } else {
@@ -197,15 +270,38 @@ function processCommand(command) {
                 break
             }
 
+            // Se usou a flag -b (ex: git checkout -b nova-feature) ➔ CRIA E ALTERNA SIMULTANEAMENTE!
+            if (parsed.flag === '-b') {
+                if (!gitState.comitted) {
+                    printOutput(`fatal: not a valid object name: 'main' (crie o primeiro commit antes de ramificar!)`, 'error')
+                    break
+                }
+
+                if (gitState.branches.includes(parsed.arg)) {
+                    printOutput(`fatal: a branch named '${parsed.arg}' already exists`, 'error')
+                    break
+                }
+
+                gitState.branches.push(parsed.arg)
+                gitState.currentBranch = parsed.arg
+                updatePromptAndPipelineBranch()
+                printOutput(`Switched to a new branch '${parsed.arg}'`, 'success')
+                showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}'!`, 'NOVA RAMIFICAÇÃO CRIADA')
+                break
+            }
+
+            // Checkout comum (alternar para branch existente)
             if (!gitState.branches.includes(parsed.arg)) {
                 printOutput(`error: pathspec '${parsed.arg}' did not match any file(s) known to git`, 'error')
             } else if (parsed.arg === gitState.currentBranch) {
                 printOutput(`Already on '${parsed.arg}'`, 'warning')
             } else {
                 gitState.currentBranch = parsed.arg
+                updatePromptAndPipelineBranch()
                 printOutput(`Switched to branch '${parsed.arg}'`, 'success')
             }
             break
+
         case 'git init':
             if (gitState.initialized) {
                 printOutput('Repositório já inicializado.', 'warning')
@@ -219,6 +315,7 @@ function processCommand(command) {
                 gitState.xp += 50
                 gitState.currentMissionIndex++
                 renderMission()
+                updatePromptAndPipelineBranch()
                 printOutput('⭐ Missão 01 Concluída! +50 XP (Total: ' + gitState.xp + ' XP)', 'success')
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
             }
@@ -249,11 +346,11 @@ function processCommand(command) {
         if (gitState.initialized && gitState.filesAdded && !gitState.comitted){
             gitState.comitted = true
             stagingFiles.innerHTML = ''
-            repositoryFiles.appendChild(createFileItem('index.html'))
-            repositoryFiles.appendChild(createFileItem('style.css'))
-            repositoryFiles.appendChild(createFileItem('app.js'))
+            repositoryFiles.appendChild(createFileItem('index.html', gitState.currentBranch))
+            repositoryFiles.appendChild(createFileItem('style.css', gitState.currentBranch))
+            repositoryFiles.appendChild(createFileItem('app.js', gitState.currentBranch))
 
-            printOutput('[main (root-commit)] ' + parsed.msg, 'success')
+            printOutput(`[${gitState.currentBranch} (root-commit)] ${parsed.msg || 'Initial commit'}`, 'success')
             printOutput('3 files changed', 'success')
 
             gitState.xp += 100
