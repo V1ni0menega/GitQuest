@@ -11,13 +11,13 @@ export const missions = [
     {
         title: "Missão 02: Preparando Arquivos",
         xp: 50,
-        description: "Arquivos foram detectados no seu Working Directory. Adicione-os à Staging Area para prepará-los para o commit.",
-        command: "git add"
+        description: "Arquivos foram detectados no seu Working Directory. Adicione todos eles à Staging Area com a notação de ponto: git add .",
+        command: "git add ."
     },
     {
         title: "Missão 03: O Primeiro Commit",
         xp: 100,
-        description: "Seus arquivos estão no Staging. Salve o primeiro snapshot da história do repositório criando o seu commit.",
-        command: "git commit"
+        description: "Seus arquivos estão no Staging. Salve o primeiro snapshot da história com a flag de mensagem: git commit -m \"Initial commit\".",
+        command: 'git commit -m "Initial commit"'
     }
 ]

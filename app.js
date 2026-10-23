@@ -75,17 +75,23 @@ function parserCommand(command) {
 
     // 1. Caso com flag -m (ex: git commit -m "msg")
     if (trimmed.includes('-m')) {
-        const parts = trimmed.split('-m')
+        const mIndex = trimmed.indexOf('-m')
+        const basePart = trimmed.slice(0, mIndex).trim()
+        let cleanMsg = trimmed.slice(mIndex + 2).trim()
+        // Remove aspas duplas ou simples envolventes da mensagem
+        if ((cleanMsg.startsWith('"') && cleanMsg.endsWith('"')) || (cleanMsg.startsWith("'") && cleanMsg.endsWith("'"))) {
+            cleanMsg = cleanMsg.slice(1, -1).trim()
+        }
         return {
-            base: parts[0].trim(),
+            base: basePart,
             arg: '',
             flag: '-m',
-            msg: parts[1].trim()
+            msg: cleanMsg
         }
     }
 
-    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature ou git branch feature)
-    const words = trimmed.split(' ')
+    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature, git branch feature ou git add .)
+    const words = trimmed.split(/\s+/)
     if (words[0] === 'git' && words.length > 2) {
         // Caso especial: git checkout -b <nome>
         if (words[1] === 'checkout' && words[2] === '-b' && words.length > 3) {
@@ -98,7 +104,7 @@ function parserCommand(command) {
         }
 
         const subCommand = words[1]
-        if (subCommand === 'branch' || subCommand === 'checkout') {
+        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add') {
             return {
                 base: 'git ' + subCommand,
                 arg: words[2],
@@ -196,7 +202,7 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add, git commit -m "...", git status, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
             break
 
         case 'git status':
@@ -217,7 +223,7 @@ function processCommand(command) {
                 printOutput('	app.js', 'error')
                 printOutput('	index.html', 'error')
                 printOutput('	style.css', 'error')
-                printOutput('nothing added to commit but untracked files present (use "git add" to track)')
+                printOutput('nothing added to commit but untracked files present (use "git add ." to track)')
             } else if (gitState.filesAdded && !gitState.comitted) {
                 printOutput('Changes to be committed:', 'info')
                 printOutput('  (use "git restore --staged <file>..." to unstage)', 'info')
@@ -320,56 +326,82 @@ function processCommand(command) {
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
             }
             break
-     case 'git add':
-        if (gitState.initialized && !gitState.filesAdded) {
+        case 'git add':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            if (!parsed.arg) {
+                printOutput('Nada especificado, nada adicionado.', 'warning')
+                printOutput("Talvez você queira dizer 'git add .'?", 'info')
+                break
+            }
+
+            if (parsed.arg !== '.' && parsed.arg !== '-A' && parsed.arg !== '--all') {
+                printOutput(`fatal: pathspec '${parsed.arg}' did not match any files (use "git add ." para adicionar todos os arquivos)`, 'error')
+                break
+            }
+
+            if (gitState.filesAdded) {
+                printOutput('Arquivos já adicionados ao staging.', 'warning')
+                break
+            }
+
             gitState.filesAdded = true
             workingFiles.innerHTML = ''
             stagingFiles.appendChild(createFileItem('index.html'))
             stagingFiles.appendChild(createFileItem('style.css'))
             stagingFiles.appendChild(createFileItem('app.js'))
 
-            printOutput('Arquivos adicionados ao staging area!','success')
+            printOutput('Arquivos adicionados ao staging area!', 'success')
 
             gitState.xp += 50
             gitState.currentMissionIndex++
             renderMission()
             showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
-            
-        } else if (gitState.initialized && gitState.filesAdded) {
-            printOutput('Arquivos já adicionados ao staging.','warning')
-        } else {
-            printOutput('Repositório não inicializado. Execute "git init" primeiro.', 'error')
-        }
-        break
-     case 'git commit':
-        if (gitState.initialized && gitState.filesAdded && !gitState.comitted){
+            break
+
+        case 'git commit':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            if (!gitState.filesAdded) {
+                printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
+                break
+            }
+
+            if (gitState.comitted) {
+                printOutput('nothing to commit, working tree clean', 'warning')
+                break
+            }
+
+            if (parsed.flag !== '-m') {
+                printOutput('fatal: use a flag -m para informar a mensagem do commit. Ex: git commit -m "sua mensagem"', 'error')
+                break
+            }
+
+            if (!parsed.msg || parsed.msg.trim() === '') {
+                printOutput('Aborting commit due to empty commit message.', 'error')
+                break
+            }
+
             gitState.comitted = true
             stagingFiles.innerHTML = ''
             repositoryFiles.appendChild(createFileItem('index.html', gitState.currentBranch))
             repositoryFiles.appendChild(createFileItem('style.css', gitState.currentBranch))
             repositoryFiles.appendChild(createFileItem('app.js', gitState.currentBranch))
 
-            printOutput(`[${gitState.currentBranch} (root-commit)] ${parsed.msg || 'Initial commit'}`, 'success')
-            printOutput('3 files changed', 'success')
+            printOutput(`[${gitState.currentBranch} (root-commit)] ${parsed.msg}`, 'success')
+            printOutput('3 files changed, 3 insertions(+)', 'success')
 
             gitState.xp += 100
             gitState.currentMissionIndex++
             renderMission()
             showRetroCelebration('+100 XP CONQUISTADO!', 'TRILHA BÁSICA CONCLUÍDA!')
-        }
-        else if (gitState.initialized && gitState.filesAdded && gitState.comitted){
-            printOutput('Nada para commitar','warning')
-        }
-        else if (!gitState.initialized){
-            printOutput('Repositório não inicializado. Execute "git init" primeiro.','error')
-        }
-        else if (!gitState.filesAdded){
-            printOutput('Erro: você precisa usar "git add" antes de "git commit".','error')
-        }
-        else {
-            printOutput('Erro: O que você está tentando commitar?','error')
-        }
-        break
+            break
         default:
             printOutput('Comando não reconhecido: ' + command,'error')
         break
@@ -434,11 +466,11 @@ initModalEvents({
             gitState.currentMissionIndex = index
             renderMission()
             closeMissionsModal()
-            printOutput(` Navegando para ${missions[index].title}!`)
+            printOutput(`Navegando para ${missions[index].title}!`)
         }
     },
     onTabWarning: (tabName) => {
-        printOutput(`ℹ Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
+        printOutput(`Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
     }
 })
 
