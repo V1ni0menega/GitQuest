@@ -40,6 +40,8 @@ const gitState = {
     comitted : false, 
     workingFiles: [],
     stagedFiles:[],
+    branches:['main'],
+    currentBranch:'main',
     history:[],
     position: 0,
     xp : 0,
@@ -120,6 +122,20 @@ function processCommand(command) {
     const parsed = parserCommand(command)
 
     switch (parsed.base) {
+        case 'git branch':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            gitState.branches.forEach(function (branch) {
+                if (branch === gitState.currentBranch) {
+                    printOutput('* ' + branch, 'success')
+                } else {
+                    printOutput('  ' + branch)
+                }
+            })
+            break
         case 'git init':
             if (gitState.initialized) {
                 printOutput('Repositório já inicializado.', 'warning')
