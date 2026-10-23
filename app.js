@@ -7,6 +7,7 @@
 import { missions } from './js/missions-data.js'
 import { showRetroCelebration } from './js/toast.js'
 import { closeMissionsModal, updateModalAndStatsUI, initModalEvents } from './js/modal.js'
+import { initWelcomeModal, openWelcomeModal } from './js/welcome-modal.js'
 
 // ─────────────────────────────────────────────
 // 1. SELETORES
@@ -316,7 +317,6 @@ function processCommand(command) {
                 gitState.currentMissionIndex++
                 renderMission()
                 updatePromptAndPipelineBranch()
-                printOutput('⭐ Missão 01 Concluída! +50 XP (Total: ' + gitState.xp + ' XP)', 'success')
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
             }
             break
@@ -333,7 +333,6 @@ function processCommand(command) {
             gitState.xp += 50
             gitState.currentMissionIndex++
             renderMission()
-            printOutput('⭐ Missão 02 Concluída! +50 XP (Total: ' + gitState.xp + ' XP)', 'success')
             showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
             
         } else if (gitState.initialized && gitState.filesAdded) {
@@ -356,7 +355,6 @@ function processCommand(command) {
             gitState.xp += 100
             gitState.currentMissionIndex++
             renderMission()
-            printOutput('⭐ Missão 03 Concluída! +100 XP (Total: ' + gitState.xp + ' XP)', 'success')
             showRetroCelebration('+100 XP CONQUISTADO!', 'TRILHA BÁSICA CONCLUÍDA!')
         }
         else if (gitState.initialized && gitState.filesAdded && gitState.comitted){
@@ -436,11 +434,18 @@ initModalEvents({
             gitState.currentMissionIndex = index
             renderMission()
             closeMissionsModal()
-            printOutput(`🎯 Navegando para ${missions[index].title}!`)
+            printOutput(` Navegando para ${missions[index].title}!`)
         }
     },
     onTabWarning: (tabName) => {
-        printOutput(`ℹ️ Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
+        printOutput(`ℹ Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
+    }
+})
+
+// ─── Eventos do Modal de Boas-Vindas & Onboarding ───
+initWelcomeModal({
+    onStart: () => {
+        promptInput.focus()
     }
 })
 

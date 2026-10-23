@@ -779,6 +779,169 @@ body {
     text-transform: uppercase;
 }
 
+/* ─────────────────────────────────────────────
+   MODAL DE BOAS-VINDAS & ONBOARDING
+   ───────────────────────────────────────────── */
+
+.welcome-window {
+    max-width: 720px;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(6, 182, 212, 0.15);
+}
+
+.welcome-body {
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.welcome-hero {
+    text-align: center;
+}
+
+.welcome-badge {
+    display: inline-block;
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid var(--accent-terminal);
+    color: var(--accent-terminal);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 20px;
+    letter-spacing: 1.2px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.welcome-hero h2 {
+    font-size: var(--font-size-2xl);
+    color: #ffffff;
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: 0.5px;
+}
+
+.welcome-hero p {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.welcome-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+}
+
+.welcome-card {
+    background: #0d1322;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.welcome-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+.welcome-card-icon {
+    font-size: 26px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.welcome-card h4 {
+    font-size: var(--font-size-sm);
+    color: #ffffff;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.welcome-card p {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.welcome-card code {
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--accent-terminal);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+
+.welcome-tips {
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 3px solid #f59e0b;
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.welcome-tips .tip-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.welcome-tips p {
+    line-height: 1.4;
+}
+
+.welcome-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.welcome-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 12px;
+    color: #94a3b8;
+    cursor: pointer;
+    user-select: none;
+}
+
+.welcome-checkbox-label input[type="checkbox"] {
+    accent-color: var(--accent-terminal);
+    cursor: pointer;
+}
+
+.welcome-cta-btn {
+    background: linear-gradient(135deg, #06b6d4, #0284c7);
+    border: none;
+    color: #0b0f19;
+    font-family: var(--font-terminal);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.welcome-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 26px rgba(6, 182, 212, 0.7);
+    filter: brightness(1.1);
+}
+
+
 
 
 

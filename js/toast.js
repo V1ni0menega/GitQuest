@@ -26,9 +26,9 @@ export function showRetroCelebration(msg, sub = 'MISSÃO CUMPRIDA') {
     // Toca o sintetizador 8-bit chiptune
     playRetro8BitSound()
 
-    // Agenda o fechamento automático após 2.8 segundos sem travar a UI
+    // Agenda o fechamento automático após 4.2 segundos para melhor legibilidade
     if (retroToastTimeout) clearTimeout(retroToastTimeout)
     retroToastTimeout = setTimeout(() => {
         retroToastElement.classList.add('hidden')
-    }, 2800)
+    }, 4200)
 }

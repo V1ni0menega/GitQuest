@@ -68,6 +68,7 @@
                     <h2 class="mission-title" id="mission-title-trigger" title="Clique para abrir a trilha de missões">Missão 01: O Início</h2>
                 </div>
                 <div class="mission-header-actions">
+                    <button class="btn-open-modal" id="open-welcome-btn" title="Guia de Boas-Vindas & Ajuda">❓ Ajuda</button>
                     <button class="btn-open-modal" id="open-missions-btn" title="Abrir Trilha de Missões">🗺️ Trilha</button>
                     <span class="mission-badge">+50 XP</span>
                 </div>
@@ -142,6 +143,63 @@
                         <button class="level-btn locked" disabled>4</button>
                     </div>
                 </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Boas-Vindas ao GitQuest (Onboarding) -->
+    <div id="welcome-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-title">
+        <div class="modal-window welcome-window">
+            <header class="modal-header">
+                <div class="modal-window-controls">
+                    <button class="modal-dot dot-red" id="close-welcome-dot" title="Fechar"></button>
+                    <span class="modal-dot dot-yellow"></span>
+                    <span class="modal-dot dot-green"></span>
+                </div>
+                <span id="welcome-modal-title" class="modal-title">🎮 Boas-Vindas ao GitQuest</span>
+                <button class="modal-close-btn" id="close-welcome-btn" aria-label="Fechar">&times;</button>
+            </header>
+
+            <div class="welcome-body">
+                <div class="welcome-hero">
+                    <span class="welcome-badge">GITQUEST • ARCADE DEV</span>
+                    <h2>Aprenda Git Jogando!</h2>
+                    <p>Aqui você não apenas decora comandos: você enxerga os arquivos se movimentando fisicamente entre as áreas do Git em tempo real.</p>
+                </div>
+
+                <div class="welcome-grid">
+                    <div class="welcome-card card-terminal">
+                        <div class="welcome-card-icon">💻</div>
+                        <h4>1. Terminal Interativo</h4>
+                        <p>Digite comandos reais do Git. Use as setas <code>↑</code> e <code>↓</code> para o histórico e digite <code>help</code> para ver atalhos.</p>
+                    </div>
+
+                    <div class="welcome-card card-pipeline">
+                        <div class="welcome-card-icon">📦</div>
+                        <h4>2. Pipeline Visual</h4>
+                        <p>Veja seus arquivos transitarem entre <strong>Working</strong> ➔ <strong>Staging</strong> ➔ <strong>Repository</strong> com o ponteiro <strong>HEAD</strong>.</p>
+                    </div>
+
+                    <div class="welcome-card card-missions">
+                        <div class="welcome-card-icon">🎯</div>
+                        <h4>3. Missões & XP</h4>
+                        <p>Siga os objetivos, ganhe XP e abra o mapa em <strong>🗺️ Trilha</strong> para escolher ou rever qualquer fase já desbloqueada.</p>
+                    </div>
+                </div>
+
+                <div class="welcome-tips">
+                    <span class="tip-icon">💡</span>
+                    <p><strong>Sem medo de errar:</strong> Se executar algo fora de ordem, o terminal te orienta amigavelmente com cores semânticas!</p>
+                </div>
+
+                <footer class="welcome-footer">
+                    <label class="welcome-checkbox-label">
+                        <input type="checkbox" id="welcome-dont-show"> Não exibir automaticamente ao abrir
+                    </label>
+                    <button class="welcome-cta-btn" id="start-quest-btn">
+                        🚀 Bora Codar!
+                    </button>
+                </footer>
             </div>
         </div>
     </div>
