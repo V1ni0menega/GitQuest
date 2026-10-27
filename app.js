@@ -54,15 +54,22 @@ const pipelineBranchBadge  = document.getElementById('pipeline-branch-badge')
 // ────────────────────────────────────────────
 const gitState = {
     initialized: false,
-    filesAdded: false,
-    comitted : false, 
+    statusChecked: false, // Fase 2: git status
+    filesAdded: false,    // Fase 2: git add .
+    comitted: false,      // Fase 3: git commit
+    commits: [],          // Histórico de commits [{ hash, branch, author, date, msg }]
+    logViewed: false,     // Fase 4: git log
+    phase5Spawned: false, // Fase 5: geração de múltiplos arquivos
+    phase5Added: false,   // Fase 5: git add . para novos arquivos
+    phase5Committed: false,// Fase 5: segundo commit
+    branchCreated: false, // Fase 6: git branch / checkout para nova branch
     workingFiles: [],
-    stagedFiles:[],
-    branches:['main'],
-    currentBranch:'main',
-    history:[],
+    stagedFiles: [],
+    branches: ['main'],
+    currentBranch: 'main',
+    history: [],
     position: 0,
-    xp : 0,
+    xp: 0,
     currentMissionIndex: 0,
     victoryShown: false,
     hintsRevealed: {}, // { [missionIndex]: quantidade_revelada } (limite de 3 por fase)
@@ -109,20 +116,20 @@ function parserCommand(command) {
     const words = trimmed.split(/\s+/)
     if (words[0] === 'git' && words.length > 2) {
         // Caso especial: git checkout -b <nome>
-        if (words[1] === 'checkout' && words[2] === '-b' && words.length > 3) {
+        if (words[1] === 'checkout' && words[2] === '-b') {
             return {
                 base: 'git checkout',
-                arg: words[3],
+                arg: words.length > 3 ? words[3] : '',
                 flag: '-b',
                 msg: ''
             }
         }
 
         const subCommand = words[1]
-        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add') {
+        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status') {
             return {
                 base: 'git ' + subCommand,
-                arg: words[2],
+                arg: words.slice(2).join(' '),
                 flag: '',
                 msg: ''
             }
@@ -232,6 +239,14 @@ function renderMission() {
         missionCommandElement.textContent = current.command
         if (missionStepIndicator) {
             missionStepIndicator.textContent = 'Fase ' + (gitState.currentMissionIndex + 1) + ' de ' + missions.length
+        }
+
+        // Fase 5: Gera múltiplos arquivos no Working Directory caso ainda não existam
+        if (gitState.currentMissionIndex === 4 && !gitState.phase5Spawned) {
+            gitState.phase5Spawned = true
+            workingFiles.appendChild(createFileItem('components.js'))
+            workingFiles.appendChild(createFileItem('README.md'))
+            printOutput('📁 Novos arquivos detectados no Working Directory: components.js, README.md', 'info')
         }
 
         // Renderiza o checklist de objetivos da missão (GEG-18)
@@ -400,7 +415,7 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git log, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
             break
 
         case 'git status':
@@ -412,11 +427,27 @@ function processCommand(command) {
 
             printOutput(`On branch ${gitState.currentBranch}`, 'info')
 
-            if (!gitState.comitted) {
+            if (gitState.commits.length === 0) {
                 printOutput('No commits yet', 'warning')
             }
 
-            if (!gitState.filesAdded && !gitState.comitted) {
+            // Suporte de status para a Fase 5 (múltiplos arquivos)
+            if (gitState.currentMissionIndex === 4) {
+                if (!gitState.phase5Added) {
+                    printOutput('Untracked files:', 'warning')
+                    printOutput('  (use "git add <file>..." to include in what will be committed)', 'info')
+                    printOutput('	components.js', 'error')
+                    printOutput('	README.md', 'error')
+                    printOutput('nothing added to commit but untracked files present (use "git add ." to track)')
+                } else if (gitState.phase5Added && !gitState.phase5Committed) {
+                    printOutput('Changes to be committed:', 'info')
+                    printOutput('  (use "git restore --staged <file>..." to unstage)', 'info')
+                    printOutput('	new file:   components.js', 'success')
+                    printOutput('	new file:   README.md', 'success')
+                } else {
+                    printOutput('nothing to commit, working tree clean', 'success')
+                }
+            } else if (!gitState.filesAdded && !gitState.comitted) {
                 printOutput('Untracked files:', 'warning')
                 printOutput('  (use "git add <file>..." to include in what will be committed)', 'info')
                 printOutput('	app.js', 'error')
@@ -432,6 +463,51 @@ function processCommand(command) {
             } else {
                 printOutput('nothing to commit, working tree clean', 'success')
             }
+
+            // Checagem de objetivo da Fase 2 (GEG-20)
+            if (gitState.currentMissionIndex === 1 && !gitState.statusChecked) {
+                gitState.statusChecked = true
+                gitState.xp += 25
+                renderMission()
+                showRetroCelebration('+25 XP!', 'STATUS DO REPOSITÓRIO INSPECIONADO')
+            }
+            break
+
+        case 'git log':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                printOutput('💡 Dica pedagógica: execute "git init" para inicializar o repositório.', 'warning')
+                break
+            }
+
+            if (gitState.commits.length === 0) {
+                printOutput(`fatal: your current branch '${gitState.currentBranch}' does not have any commits yet`, 'error')
+                printOutput('💡 Dica pedagógica: grave seu primeiro snapshot com "git commit -m \\"...\\"" antes de usar "git log".', 'warning')
+                break
+            }
+
+            if (parsed.arg && parsed.arg.includes('--oneline')) {
+                gitState.commits.forEach(c => {
+                    printOutput(`${c.hash.substring(0, 7)} ${c.msg}`, 'info')
+                })
+            } else {
+                gitState.commits.forEach(c => {
+                    printOutput(`commit ${c.hash} (HEAD -> ${c.branch})`, 'warning')
+                    printOutput(`Author: ${c.author}`)
+                    printOutput(`Date:   ${c.date}`)
+                    printOutput('')
+                    printOutput(`    ${c.msg}`)
+                    printOutput('')
+                })
+            }
+
+            // Checagem de objetivo da Fase 4 (GEG-20)
+            if (gitState.currentMissionIndex === 3 && !gitState.logViewed) {
+                gitState.logViewed = true
+                gitState.xp += 75
+                renderMission()
+                showRetroCelebration('+75 XP CONQUISTADO!', 'HISTÓRICO EXPLORADO!')
+            }
             break
 
         case 'git branch':
@@ -443,7 +519,7 @@ function processCommand(command) {
 
             // Se passou o nome (ex: git branch feature-login) ➔ CRIA a nova branch
             if (parsed.arg) {
-                if (!gitState.comitted) {
+                if (gitState.commits.length === 0) {
                     printOutput(`fatal: not a valid object name: 'main'`, 'error')
                     printOutput('💡 Dica pedagógica: branches são ponteiros para commits. Crie o primeiro commit antes de ramificar!', 'warning')
                     break
@@ -474,15 +550,21 @@ function processCommand(command) {
                 break
             }
 
-            if (!parsed.arg) {
+            if (!parsed.arg && parsed.flag !== '-b') {
                 printOutput('fatal: branch name required for checkout', 'error')
-                printOutput('💡 Dica pedagógica: especifique o nome da branch. Exemplo: git checkout main ou git checkout -b nova-branch', 'warning')
+                printOutput('💡 Dica pedagógica: especifique o nome da branch. Exemplo: git checkout main ou git checkout -b feature-auth', 'warning')
                 break
             }
 
-            // Se usou a flag -b (ex: git checkout -b nova-feature) ➔ CRIA E ALTERNA SIMULTANEAMENTE!
+            // Se usou a flag -b (ex: git checkout -b feature-auth) ➔ CRIA E ALTERNA SIMULTANEAMENTE!
             if (parsed.flag === '-b') {
-                if (!gitState.comitted) {
+                if (!parsed.arg) {
+                    printOutput("fatal: '-b' requires a branch name", 'error')
+                    printOutput('💡 Dica pedagógica: especifique o nome da branch após a flag -b. Exemplo: git checkout -b feature-auth', 'warning')
+                    break
+                }
+
+                if (gitState.commits.length === 0) {
                     printOutput(`fatal: not a valid object name: 'main'`, 'error')
                     printOutput('💡 Dica pedagógica: grave seu primeiro commit antes de ramificar com "git checkout -b"!', 'warning')
                     break
@@ -498,6 +580,15 @@ function processCommand(command) {
                 updatePromptAndPipelineBranch()
                 printOutput(`Switched to a new branch '${parsed.arg}'`, 'success')
                 showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}'!`, 'NOVA RAMIFICAÇÃO CRIADA')
+
+                // Checagem de objetivo da Fase 6 (GEG-20)
+                if (parsed.arg === 'feature-auth' || gitState.currentMissionIndex === 5) {
+                    if (!gitState.branchCreated) {
+                        gitState.branchCreated = true
+                        gitState.xp += 150
+                        renderMission()
+                    }
+                }
                 break
             }
 
@@ -511,6 +602,15 @@ function processCommand(command) {
                 gitState.currentBranch = parsed.arg
                 updatePromptAndPipelineBranch()
                 printOutput(`Switched to branch '${parsed.arg}'`, 'success')
+
+                // Checagem de objetivo da Fase 6 caso alterne para feature-auth
+                if (parsed.arg === 'feature-auth' || gitState.currentMissionIndex === 5) {
+                    if (!gitState.branchCreated) {
+                        gitState.branchCreated = true
+                        gitState.xp += 150
+                        renderMission()
+                    }
+                }
             }
             break
 
@@ -531,6 +631,7 @@ function processCommand(command) {
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
             }
             break
+
         case 'git add':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
@@ -550,6 +651,27 @@ function processCommand(command) {
                 break
             }
 
+            // Suporte para Fase 5 (múltiplos arquivos)
+            if (gitState.currentMissionIndex === 4) {
+                if (gitState.phase5Added) {
+                    printOutput('Arquivos já adicionados ao staging.', 'warning')
+                    printOutput('💡 Dica pedagógica: seus novos arquivos já estão preparados. Grave o snapshot com: git commit -m "feat: novos componentes".', 'info')
+                    break
+                }
+
+                gitState.phase5Added = true
+                workingFiles.innerHTML = ''
+                stagingFiles.appendChild(createFileItem('components.js'))
+                stagingFiles.appendChild(createFileItem('README.md'))
+
+                printOutput('Novos arquivos adicionados ao staging area!', 'success')
+
+                gitState.xp += 50
+                renderMission()
+                showRetroCelebration('+50 XP CONQUISTADO!', 'MÚLTIPLOS ARQUIVOS NO STAGING')
+                break
+            }
+
             if (gitState.filesAdded) {
                 printOutput('Arquivos já adicionados ao staging.', 'warning')
                 printOutput('💡 Dica pedagógica: seus arquivos já estão preparados. Agora crie um snapshot com: git commit -m "Initial commit".', 'info')
@@ -564,27 +686,15 @@ function processCommand(command) {
 
             printOutput('Arquivos adicionados ao staging area!', 'success')
 
-            gitState.xp += 50
+            gitState.xp += 25
             renderMission()
-            showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
+            showRetroCelebration('+25 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
             break
 
         case 'git commit':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
                 printOutput('💡 Dica pedagógica: inicialize o repositório com "git init" antes de tentar commitar.', 'warning')
-                break
-            }
-
-            if (!gitState.filesAdded) {
-                printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
-                printOutput('💡 Dica pedagógica: arquivos modificados precisam ser preparados no Staging com "git add ." antes de fazer o commit.', 'warning')
-                break
-            }
-
-            if (gitState.comitted) {
-                printOutput('nothing to commit, working tree clean', 'warning')
-                printOutput('💡 Dica pedagógica: o snapshot já foi gravado com sucesso! Repositório limpo.', 'info')
                 break
             }
 
@@ -600,18 +710,76 @@ function processCommand(command) {
                 break
             }
 
+            // Suporte para Fase 5 (segundo commit com múltiplos arquivos)
+            if (gitState.currentMissionIndex === 4) {
+                if (!gitState.phase5Added) {
+                    printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
+                    printOutput('💡 Dica pedagógica: prepare os arquivos adicionando-os ao Staging com "git add ." antes de commitar.', 'warning')
+                    break
+                }
+
+                if (gitState.phase5Committed) {
+                    printOutput('nothing to commit, working tree clean', 'warning')
+                    printOutput('💡 Dica pedagógica: o segundo snapshot já foi registrado! Repositório limpo.', 'info')
+                    break
+                }
+
+                gitState.phase5Committed = true
+                stagingFiles.innerHTML = ''
+                repositoryFiles.appendChild(createFileItem('components.js', gitState.currentBranch))
+                repositoryFiles.appendChild(createFileItem('README.md', gitState.currentBranch))
+
+                const commitHash = Math.random().toString(16).substring(2, 9)
+                gitState.commits.unshift({
+                    hash: commitHash,
+                    branch: gitState.currentBranch,
+                    author: 'Dev Aprendiz <guest@gitquest.dev>',
+                    date: new Date().toUTCString(),
+                    msg: parsed.msg
+                })
+
+                printOutput(`[${gitState.currentBranch} ${commitHash}] ${parsed.msg}`, 'success')
+                printOutput('2 files changed, 42 insertions(+)', 'success')
+
+                gitState.xp += 50
+                renderMission()
+                showRetroCelebration('+50 XP CONQUISTADO!', 'SEGUNDO SNAPSHOT GRAVADO!')
+                break
+            }
+
+            if (!gitState.filesAdded) {
+                printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
+                printOutput('💡 Dica pedagógica: arquivos modificados precisam ser preparados no Staging com "git add ." antes de fazer o commit.', 'warning')
+                break
+            }
+
+            if (gitState.comitted) {
+                printOutput('nothing to commit, working tree clean', 'warning')
+                printOutput('💡 Dica pedagógica: o snapshot já foi gravado com sucesso! Repositório limpo.', 'info')
+                break
+            }
+
             gitState.comitted = true
             stagingFiles.innerHTML = ''
             repositoryFiles.appendChild(createFileItem('index.html', gitState.currentBranch))
             repositoryFiles.appendChild(createFileItem('style.css', gitState.currentBranch))
             repositoryFiles.appendChild(createFileItem('app.js', gitState.currentBranch))
 
-            printOutput(`[${gitState.currentBranch} (root-commit)] ${parsed.msg}`, 'success')
+            const firstCommitHash = Math.random().toString(16).substring(2, 9)
+            gitState.commits.unshift({
+                hash: firstCommitHash,
+                branch: gitState.currentBranch,
+                author: 'Dev Aprendiz <guest@gitquest.dev>',
+                date: new Date().toUTCString(),
+                msg: parsed.msg
+            })
+
+            printOutput(`[${gitState.currentBranch} (root-commit) ${firstCommitHash}] ${parsed.msg}`, 'success')
             printOutput('3 files changed, 3 insertions(+)', 'success')
 
             gitState.xp += 100
             renderMission()
-            showRetroCelebration('+100 XP CONQUISTADO!', 'TRILHA BÁSICA CONCLUÍDA!')
+            showRetroCelebration('+100 XP CONQUISTADO!', 'PRIMEIRO COMMIT GRAVADO!')
             break
         default:
             handlePedagogicalError(command, parsed)
