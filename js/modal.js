@@ -13,9 +13,11 @@ const module1LevelButtons = document.querySelectorAll('#module-1-levels .level-b
 const moduleStepDesc      = document.getElementById('module-step-desc')
 const tabButtons          = document.querySelectorAll('.modal-tabs .tab-btn')
 
-// Seletores das Estatísticas Globais
+// Seletores das Estatísticas Globais & Stepper do Navbar
 const globalXpElement     = document.getElementById('global-xp')
 const globalStarsElement  = document.getElementById('global-stars')
+const navPhasesBar        = document.getElementById('nav-phases-bar')
+const navStepButtons      = document.querySelectorAll('#nav-stepper .step-item')
 
 // Abre a janela modal e sincroniza os dados
 export function openMissionsModal() {
@@ -30,19 +32,47 @@ export function closeMissionsModal() {
 }
 
 /**
- * Sincroniza a pílula global no topo e os botões de fase dentro do modal
+ * Sincroniza a pílula global no topo, o stepper da navbar e os botões de fase dentro do modal
  * @param {number} currentMissionIndex Índice da fase atual
  * @param {number} xp Pontuação atual de XP
  */
 export function updateModalAndStatsUI(currentMissionIndex, xp) {
     // 1. Atualiza Stats Globais no Topo
     if (globalXpElement) globalXpElement.textContent = xp
+    const completedStars = Math.min(currentMissionIndex, missions.length)
     if (globalStarsElement) {
-        const completedStars = Math.min(currentMissionIndex, missions.length)
         globalStarsElement.textContent = `${completedStars}/${missions.length}`
     }
 
-    // 2. Atualiza Botões de Nível do Módulo 1 (Fundamentos)
+    // 2. Atualiza Barra de Progresso Mini na Navbar
+    if (navPhasesBar) {
+        const percent = Math.round((completedStars / missions.length) * 100)
+        navPhasesBar.style.width = `${percent}%`
+    }
+
+    // 3. Atualiza Stepper da Navbar Principal
+    navStepButtons.forEach((btn, index) => {
+        btn.classList.remove('completed', 'active', 'locked')
+        const circle = btn.querySelector('.step-circle')
+        if (index < currentMissionIndex) {
+            btn.classList.add('completed')
+            btn.disabled = false
+            btn.title = `Fase ${index + 1}: Concluída! Clique para revisar.`
+            if (circle) circle.textContent = '✔'
+        } else if (index === currentMissionIndex) {
+            btn.classList.add('active')
+            btn.disabled = false
+            btn.title = `Fase ${index + 1}: Em andamento!`
+            if (circle) circle.textContent = (index + 1)
+        } else {
+            btn.classList.add('locked')
+            btn.disabled = true
+            btn.title = `Fase ${index + 1}: Bloqueada`
+            if (circle) circle.textContent = (index + 1)
+        }
+    })
+
+    // 4. Atualiza Botões de Nível do Módulo 1 (Fundamentos) dentro do Modal
     module1LevelButtons.forEach((btn, index) => {
         btn.classList.remove('completed', 'active', 'locked')
         if (index < currentMissionIndex) {
@@ -60,7 +90,7 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
         }
     })
 
-    // 3. Atualiza Subtítulo da Fase Atual no Modal
+    // 5. Atualiza Subtítulo da Fase Atual no Modal
     if (moduleStepDesc) {
         const curr = missions[currentMissionIndex]
         if (curr) {
@@ -72,7 +102,7 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
 }
 
 /**
- * Inicializa todos os ouvintes de eventos da janela modal de forma desacoplada
+ * Inicializa todos os ouvintes de eventos da janela modal e stepper de forma desacoplada
  * @param {Object} handlers Callbacks de interação
  * @param {Function} handlers.onSelectMission Chamado quando o usuário escolhe uma fase desbloqueada
  * @param {Function} handlers.onTabWarning Chamado quando o usuário clica em uma aba futura
@@ -81,6 +111,16 @@ export function initModalEvents({ onSelectMission, onTabWarning } = {}) {
     // Abertura do Modal
     if (openMissionsBtn) openMissionsBtn.addEventListener('click', openMissionsModal)
     if (missionTitleTrigger) missionTitleTrigger.addEventListener('click', openMissionsModal)
+
+    // Interatividade do Stepper do Navbar
+    navStepButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const index = parseInt(btn.dataset.stepIndex, 10)
+            if (onSelectMission && !isNaN(index) && !btn.classList.contains('locked')) {
+                onSelectMission(index)
+            }
+        })
+    })
 
     // Fechamento do Modal
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeMissionsModal)

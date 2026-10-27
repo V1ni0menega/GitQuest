@@ -15,37 +15,37 @@ import { initVictoryModal, openVictoryModal } from './js/victory-modal.js'
 // Referências aos elementos do HTML que o JS precisa controlar
 // ─────────────────────────────────────────────
 
-const terminal       = document.querySelector('.panel-terminal')
-const promptInput    = document.querySelector('.prompt-input')
+const terminal = document.querySelector('.panel-terminal')
+const promptInput = document.querySelector('.prompt-input')
 const terminalOutput = document.querySelector('.terminal-output')
 
- //seletores para os containers da pipeline//
+//seletores para os containers da pipeline//
 
-const workingFiles  = document.querySelector('.stage-working .stage-files')
-const stagingFiles  = document.querySelector('.stage-staging .stage-files')
+const workingFiles = document.querySelector('.stage-working .stage-files')
+const stagingFiles = document.querySelector('.stage-staging .stage-files')
 const repositoryFiles = document.querySelector('.stage-repo .stage-files')
 
 /// seletores para o estado de missões
-const missionTitleElement       = document.querySelector('.mission-title')
+const missionTitleElement = document.querySelector('.mission-title')
 const missionDescriptionElement = document.querySelector('.mission-description')
-const missionXpElement          = document.querySelector('.mission-badge')
-const missionCommandElement     = document.querySelector('.mission-instruction code')
-const missionStepIndicator      = document.getElementById('mission-step-indicator')
-const missionChecklist          = document.getElementById('mission-checklist')
-const missionActions            = document.getElementById('mission-actions')
-const nextMissionBtn            = document.getElementById('next-mission-btn')
+const missionXpElement = document.querySelector('.mission-badge')
+const missionCommandElement = document.querySelector('.mission-instruction code')
+const missionStepIndicator = document.getElementById('mission-step-indicator')
+const missionChecklist = document.getElementById('mission-checklist')
+const missionActions = document.getElementById('mission-actions')
+const nextMissionBtn = document.getElementById('next-mission-btn')
 
 // Seletores de Dicas Pedagógicas (GEG-19)
-const missionHintContainer      = document.getElementById('mission-hint-container')
-const missionHintBtn            = document.getElementById('mission-hint-btn')
-const missionHintBadge          = document.getElementById('mission-hint-badge')
-const missionHintCard           = document.getElementById('mission-hint-card')
-const missionHintLevelTag       = document.getElementById('hint-level-tag')
-const missionHintText           = document.getElementById('mission-hint-text')
+const missionHintContainer = document.getElementById('mission-hint-container')
+const missionHintBtn = document.getElementById('mission-hint-btn')
+const missionHintBadge = document.getElementById('mission-hint-badge')
+const missionHintCard = document.getElementById('mission-hint-card')
+const missionHintLevelTag = document.getElementById('hint-level-tag')
+const missionHintText = document.getElementById('mission-hint-text')
 
 // Seletores do Terminal e Pipeline
-const promptLabel          = document.getElementById('prompt-label')
-const pipelineBranchBadge  = document.getElementById('pipeline-branch-badge')
+const promptLabel = document.getElementById('prompt-label')
+const pipelineBranchBadge = document.getElementById('pipeline-branch-badge')
 
 // ─────────────────────────────────────────────
 // 2. ESTADO
@@ -145,16 +145,16 @@ function parserCommand(command) {
     }
 }
 
-function printOutput(message,type = '') {
+function printOutput(message, type = '') {
     const li = document.createElement('li')
     li.textContent = message
-    if(type){
+    if (type) {
         li.classList.add(type)
     }
     terminalOutput.appendChild(li)
     terminalOutput.scrollTop = terminalOutput.scrollHeight  // auto-scroll para o fim
 }
-    
+
 function createFileItem(name, branchTag = '') {
     const div = document.createElement('div')
     div.className = 'file-item'
@@ -195,14 +195,18 @@ function updateHintUI() {
 
     if (!current || !missionHintContainer) {
         if (missionHintContainer) missionHintContainer.classList.add('hidden')
+        if (missionHintBtn) missionHintBtn.classList.add('hidden')
         return
     }
 
-    missionHintContainer.classList.remove('hidden')
+    if (missionHintBtn) missionHintBtn.classList.remove('hidden')
     const missionHints = current.hints || []
     const maxHints = Math.min(3, missionHints.length)
     const revealed = gitState.hintsRevealed[gitState.currentMissionIndex] || 0
     const remaining = Math.max(0, maxHints - revealed)
+
+    // O card de dica só aparece depois que o jogador pede a primeira dica
+    missionHintContainer.classList.toggle('hidden', revealed === 0)
 
     const btnTextSpan = missionHintBtn ? missionHintBtn.querySelector('.hint-btn-text') : null
 
@@ -235,18 +239,19 @@ function renderMission() {
     if (current) {
         missionTitleElement.textContent = current.title
         missionDescriptionElement.textContent = current.description
-        missionXpElement.textContent = '+' + current.xp + ' XP'
-        missionCommandElement.textContent = current.command
+        if (missionXpElement) missionXpElement.textContent = '+' + current.xp + ' XP'
+        if (missionCommandElement) missionCommandElement.textContent = current.command
         if (missionStepIndicator) {
             missionStepIndicator.textContent = 'Fase ' + (gitState.currentMissionIndex + 1) + ' de ' + missions.length
         }
+
 
         // Fase 5: Gera múltiplos arquivos no Working Directory caso ainda não existam
         if (gitState.currentMissionIndex === 4 && !gitState.phase5Spawned) {
             gitState.phase5Spawned = true
             workingFiles.appendChild(createFileItem('components.js'))
             workingFiles.appendChild(createFileItem('README.md'))
-            printOutput('📁 Novos arquivos detectados no Working Directory: components.js, README.md', 'info')
+            printOutput('Novos arquivos detectados no Working Directory: components.js, README.md', 'info')
         }
 
         // Renderiza o checklist de objetivos da missão (GEG-18)
@@ -267,20 +272,28 @@ function renderMission() {
         // Sincroniza o componente de dicas da fase (GEG-19)
         updateHintUI()
 
-        // Exibe o banner de avanço caso a missão atual já esteja cumprida (GEG-18)
+        // Botão de Próxima Fase ao lado do Título
         const allCompleted = isMissionCompleted(current)
         if (missionActions) {
+            missionActions.classList.remove('hidden')
+        }
+        if (nextMissionBtn) {
             if (allCompleted) {
-                missionActions.classList.remove('hidden')
-                if (nextMissionBtn) {
-                    if (gitState.currentMissionIndex === missions.length - 1) {
-                        nextMissionBtn.textContent = 'Concluir Trilha 🏆'
-                    } else {
-                        nextMissionBtn.textContent = 'Próxima Fase ➔'
-                    }
+                nextMissionBtn.disabled = false
+                nextMissionBtn.classList.remove('disabled')
+                nextMissionBtn.classList.add('ready')
+                nextMissionBtn.title = 'Avançar para a próxima fase'
+                if (gitState.currentMissionIndex === missions.length - 1) {
+                    nextMissionBtn.textContent = 'Concluir Trilha 🏆'
+                } else {
+                    nextMissionBtn.textContent = 'Próxima Fase ➔'
                 }
             } else {
-                missionActions.classList.add('hidden')
+                nextMissionBtn.disabled = true
+                nextMissionBtn.classList.add('disabled')
+                nextMissionBtn.classList.remove('ready')
+                nextMissionBtn.title = 'Complete os objetivos desta fase para avançar'
+                nextMissionBtn.textContent = 'Próxima Fase ➔'
             }
         }
     } else {
@@ -290,8 +303,9 @@ function renderMission() {
             missionStepIndicator.textContent = 'Trilha 100% concluída'
         }
         missionDescriptionElement.textContent = 'Parabéns, dev! Você dominou o ciclo completo do Git: init, add, commit e branches!'
-        missionXpElement.textContent = 'Nível 1 • ' + gitState.xp + ' XP'
-        missionCommandElement.textContent = 'git status / git branch'
+        if (missionXpElement) missionXpElement.textContent = 'Nível 1 • ' + gitState.xp + ' XP'
+        if (missionCommandElement) missionCommandElement.textContent = 'git status / git branch'
+
 
         if (missionChecklist) {
             missionChecklist.innerHTML = `
@@ -341,7 +355,7 @@ function handlePedagogicalError(command, parsed) {
     const gitCommands = ['init', 'add', 'commit', 'status', 'branch', 'checkout', 'log', 'diff', 'push', 'pull', 'clone', 'merge']
     if (gitCommands.includes(firstWord)) {
         printOutput(`Comando '${words[0]}' não encontrado no ambiente.`, 'error')
-        printOutput(`💡 Dica pedagógica: no Git, todos os comandos devem começar com 'git'. Tente executar: git ${trimmed}`, 'warning')
+        printOutput(`Dica: no Git, todos os comandos devem começar com 'git'. Tente executar: git ${trimmed}`, 'warning')
         return
     }
 
@@ -350,7 +364,7 @@ function handlePedagogicalError(command, parsed) {
     if (gitTypos.includes(firstWord)) {
         printOutput(`Comando '${words[0]}' não reconhecido.`, 'error')
         const rest = words.slice(1).join(' ')
-        printOutput(`💡 Dica pedagógica: você quis dizer 'git'? Tente: git ${rest}`.trim(), 'warning')
+        printOutput(`Dica: você quis dizer 'git'? Tente: git ${rest}`.trim(), 'warning')
         return
     }
 
@@ -382,14 +396,14 @@ function handlePedagogicalError(command, parsed) {
         if (typoMap[sub]) {
             const suggestion = `git ${typoMap[sub]}${words.length > 2 ? ' ' + words.slice(2).join(' ') : ''}`
             printOutput(`git: '${sub}' não é um comando git válido.`, 'error')
-            printOutput(`💡 Dica pedagógica: você quis dizer '${suggestion}'?`, 'warning')
+            printOutput(`Dica: você quis dizer '${suggestion}'?`, 'warning')
             return
         }
 
         // Subcomandos remotos ainda não ativos nesta trilha local
         if (sub === 'push' || sub === 'pull' || sub === 'clone' || sub === 'remote') {
             printOutput(`git: '${sub}' opera com repositórios remotos.`, 'warning')
-            printOutput(`💡 Dica pedagógica: nesta trilha estamos aprendendo os comandos locais (init, add, commit, branch).`, 'info')
+            printOutput(`Dica: nesta trilha estamos aprendendo os comandos locais (init, add, commit, branch).`, 'info')
             return
         }
     }
@@ -398,10 +412,10 @@ function handlePedagogicalError(command, parsed) {
     printOutput('Comando não reconhecido: ' + command, 'error')
     if (current) {
         const goalSummary = current.checklist && current.checklist[0] ? current.checklist[0].text : current.description
-        printOutput(`💡 Dica pedagógica: você está na '${current.title}'. Objetivo: ${goalSummary}.`, 'info')
-        printOutput(`💡 Clique no botão '💡 Pedir Dica' no painel de missões para ver uma sugestão contextual!`, 'info')
+        printOutput(`Dica: você está na '${current.title}'. Objetivo: ${goalSummary}.`, 'info')
+        printOutput(`Clique no botão 'Pedir Dica' no painel de missões para ver uma sugestão contextual!`, 'info')
     } else {
-        printOutput(`💡 Digite 'help' para listar os comandos disponíveis no GitQuest.`, 'info')
+        printOutput(`Digite 'help' para listar os comandos disponíveis no GitQuest.`, 'info')
     }
 }
 
@@ -421,7 +435,7 @@ function processCommand(command) {
         case 'git status':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: você precisa inicializar o repositório com "git init" antes de checar o status.', 'warning')
+                printOutput('Dica: você precisa inicializar o repositório com "git init" antes de checar o status.', 'warning')
                 break
             }
 
@@ -476,13 +490,13 @@ function processCommand(command) {
         case 'git log':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: execute "git init" para inicializar o repositório.', 'warning')
+                printOutput('Dica: execute "git init" para inicializar o repositório.', 'warning')
                 break
             }
 
             if (gitState.commits.length === 0) {
                 printOutput(`fatal: your current branch '${gitState.currentBranch}' does not have any commits yet`, 'error')
-                printOutput('💡 Dica pedagógica: grave seu primeiro snapshot com "git commit -m \\"...\\"" antes de usar "git log".', 'warning')
+                printOutput('Dica: grave seu primeiro snapshot com "git commit -m \\"...\\"" antes de usar "git log".', 'warning')
                 break
             }
 
@@ -513,7 +527,7 @@ function processCommand(command) {
         case 'git branch':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: inicialize o repositório primeiro com "git init".', 'warning')
+                printOutput('Dica: inicialize o repositório primeiro com "git init".', 'warning')
                 break
             }
 
@@ -521,7 +535,7 @@ function processCommand(command) {
             if (parsed.arg) {
                 if (gitState.commits.length === 0) {
                     printOutput(`fatal: not a valid object name: 'main'`, 'error')
-                    printOutput('💡 Dica pedagógica: branches são ponteiros para commits. Crie o primeiro commit antes de ramificar!', 'warning')
+                    printOutput('Dica: branches são ponteiros para commits. Crie o primeiro commit antes de ramificar!', 'warning')
                     break
                 }
                 if (gitState.branches.includes(parsed.arg)) {
@@ -530,7 +544,7 @@ function processCommand(command) {
                     gitState.branches.push(parsed.arg)
                     printOutput(`Branch '${parsed.arg}' criada com sucesso!`, 'success')
                 }
-            } 
+            }
             // Se NÃO passou nome (apenas "git branch") ➔ LISTA as branches existentes
             else {
                 gitState.branches.forEach(function (branch) {
@@ -546,13 +560,13 @@ function processCommand(command) {
         case 'git checkout':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: execute "git init" para inicializar o repositório.', 'warning')
+                printOutput('Dica: execute "git init" para inicializar o repositório.', 'warning')
                 break
             }
 
             if (!parsed.arg && parsed.flag !== '-b') {
                 printOutput('fatal: branch name required for checkout', 'error')
-                printOutput('💡 Dica pedagógica: especifique o nome da branch. Exemplo: git checkout main ou git checkout -b feature-auth', 'warning')
+                printOutput('Dica: especifique o nome da branch. Exemplo: git checkout main ou git checkout -b feature-auth', 'warning')
                 break
             }
 
@@ -560,13 +574,13 @@ function processCommand(command) {
             if (parsed.flag === '-b') {
                 if (!parsed.arg) {
                     printOutput("fatal: '-b' requires a branch name", 'error')
-                    printOutput('💡 Dica pedagógica: especifique o nome da branch após a flag -b. Exemplo: git checkout -b feature-auth', 'warning')
+                    printOutput('Dica: especifique o nome da branch após a flag -b. Exemplo: git checkout -b feature-auth', 'warning')
                     break
                 }
 
                 if (gitState.commits.length === 0) {
                     printOutput(`fatal: not a valid object name: 'main'`, 'error')
-                    printOutput('💡 Dica pedagógica: grave seu primeiro commit antes de ramificar com "git checkout -b"!', 'warning')
+                    printOutput('Dica: grave seu primeiro commit antes de ramificar com "git checkout -b"!', 'warning')
                     break
                 }
 
@@ -595,7 +609,7 @@ function processCommand(command) {
             // Checkout comum (alternar para branch existente)
             if (!gitState.branches.includes(parsed.arg)) {
                 printOutput(`error: pathspec '${parsed.arg}' did not match any file(s) known to git`, 'error')
-                printOutput(`💡 Dica pedagógica: a branch '${parsed.arg}' não existe. Para criá-la e alternar ao mesmo tempo, use: git checkout -b ${parsed.arg}`, 'warning')
+                printOutput(`Dica: a branch '${parsed.arg}' não existe. Para criá-la e alternar ao mesmo tempo, use: git checkout -b ${parsed.arg}`, 'warning')
             } else if (parsed.arg === gitState.currentBranch) {
                 printOutput(`Already on '${parsed.arg}'`, 'warning')
             } else {
@@ -617,7 +631,7 @@ function processCommand(command) {
         case 'git init':
             if (gitState.initialized) {
                 printOutput('Repositório já inicializado.', 'warning')
-                printOutput('💡 Dica pedagógica: o repositório já está ativo (.git criado). O próximo passo é preparar arquivos com "git add .".', 'info')
+                printOutput('Dica: o repositório já está ativo (.git criado). O próximo passo é preparar arquivos com "git add .".', 'info')
             } else {
                 gitState.initialized = true
                 workingFiles.appendChild(createFileItem('index.html'))
@@ -635,19 +649,19 @@ function processCommand(command) {
         case 'git add':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: você precisa inicializar o repositório primeiro com "git init".', 'warning')
+                printOutput('Dica: você precisa inicializar o repositório primeiro com "git init".', 'warning')
                 break
             }
 
             if (!parsed.arg) {
                 printOutput('Nada especificado, nada adicionado.', 'warning')
-                printOutput('💡 Dica pedagógica: use "git add ." com ponto para incluir todos os arquivos da pasta atual.', 'info')
+                printOutput('Dica: use "git add ." com ponto para incluir todos os arquivos da pasta atual.', 'info')
                 break
             }
 
             if (parsed.arg !== '.' && parsed.arg !== '-A' && parsed.arg !== '--all') {
                 printOutput(`fatal: pathspec '${parsed.arg}' did not match any files (use "git add ." para adicionar todos os arquivos)`, 'error')
-                printOutput('💡 Dica pedagógica: nesta missão, utilize a notação de ponto: "git add ." para rastrear todos os arquivos.', 'warning')
+                printOutput('Dica: nesta missão, utilize a notação de ponto: "git add ." para rastrear todos os arquivos.', 'warning')
                 break
             }
 
@@ -655,7 +669,7 @@ function processCommand(command) {
             if (gitState.currentMissionIndex === 4) {
                 if (gitState.phase5Added) {
                     printOutput('Arquivos já adicionados ao staging.', 'warning')
-                    printOutput('💡 Dica pedagógica: seus novos arquivos já estão preparados. Grave o snapshot com: git commit -m "feat: novos componentes".', 'info')
+                    printOutput('Dica: seus novos arquivos já estão preparados. Grave o snapshot com: git commit -m "feat: novos componentes".', 'info')
                     break
                 }
 
@@ -674,7 +688,7 @@ function processCommand(command) {
 
             if (gitState.filesAdded) {
                 printOutput('Arquivos já adicionados ao staging.', 'warning')
-                printOutput('💡 Dica pedagógica: seus arquivos já estão preparados. Agora crie um snapshot com: git commit -m "Initial commit".', 'info')
+                printOutput('Dica: seus arquivos já estão preparados. Agora crie um snapshot com: git commit -m "Initial commit".', 'info')
                 break
             }
 
@@ -694,19 +708,19 @@ function processCommand(command) {
         case 'git commit':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
-                printOutput('💡 Dica pedagógica: inicialize o repositório com "git init" antes de tentar commitar.', 'warning')
+                printOutput('Dica: inicialize o repositório com "git init" antes de tentar commitar.', 'warning')
                 break
             }
 
             if (parsed.flag !== '-m') {
                 printOutput('fatal: use a flag -m para informar a mensagem do commit. Ex: git commit -m "sua mensagem"', 'error')
-                printOutput('💡 Dica pedagógica: o Git exige uma mensagem descritiva. Exemplo: git commit -m "Initial commit"', 'warning')
+                printOutput('Dica: o Git exige uma mensagem descritiva. Exemplo: git commit -m "Initial commit"', 'warning')
                 break
             }
 
             if (!parsed.msg || parsed.msg.trim() === '') {
                 printOutput('Aborting commit due to empty commit message.', 'error')
-                printOutput('💡 Dica pedagógica: informe o que foi alterado dentro das aspas da flag -m. Exemplo: git commit -m "Initial commit"', 'warning')
+                printOutput('Dica: informe o que foi alterado dentro das aspas da flag -m. Exemplo: git commit -m "Initial commit"', 'warning')
                 break
             }
 
@@ -714,13 +728,13 @@ function processCommand(command) {
             if (gitState.currentMissionIndex === 4) {
                 if (!gitState.phase5Added) {
                     printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
-                    printOutput('💡 Dica pedagógica: prepare os arquivos adicionando-os ao Staging com "git add ." antes de commitar.', 'warning')
+                    printOutput('Dica: prepare os arquivos adicionando-os ao Staging com "git add ." antes de commitar.', 'warning')
                     break
                 }
 
                 if (gitState.phase5Committed) {
                     printOutput('nothing to commit, working tree clean', 'warning')
-                    printOutput('💡 Dica pedagógica: o segundo snapshot já foi registrado! Repositório limpo.', 'info')
+                    printOutput('Dica: o segundo snapshot já foi registrado! Repositório limpo.', 'info')
                     break
                 }
 
@@ -749,13 +763,13 @@ function processCommand(command) {
 
             if (!gitState.filesAdded) {
                 printOutput('no changes added to commit (use "git add ." to stage files)', 'error')
-                printOutput('💡 Dica pedagógica: arquivos modificados precisam ser preparados no Staging com "git add ." antes de fazer o commit.', 'warning')
+                printOutput('Dica: arquivos modificados precisam ser preparados no Staging com "git add ." antes de fazer o commit.', 'warning')
                 break
             }
 
             if (gitState.comitted) {
                 printOutput('nothing to commit, working tree clean', 'warning')
-                printOutput('💡 Dica pedagógica: o snapshot já foi gravado com sucesso! Repositório limpo.', 'info')
+                printOutput('Dica: o snapshot já foi gravado com sucesso! Repositório limpo.', 'info')
                 break
             }
 
@@ -875,7 +889,7 @@ if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
         const current = missions[gitState.currentMissionIndex]
         if (!isMissionCompleted(current)) {
-            printOutput('⚠️ Você precisa concluir todos os objetivos desta fase antes de avançar!', 'warning')
+            printOutput('Você precisa concluir todos os objetivos desta fase antes de avançar!', 'warning')
             return
         }
 
@@ -911,7 +925,7 @@ if (missionHintBtn) {
         updateHintUI()
 
         const hintText = currentMission.hints[newCount - 1]
-        printOutput(`💡 [Dica ${newCount}/${maxHints}]: ${hintText}`, 'warning')
+        printOutput(`[Dica ${newCount}/${maxHints}]: ${hintText}`, 'warning')
         promptInput.focus()
     })
 }

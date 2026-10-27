@@ -5,10 +5,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitQuest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <!-- Header / Navbar Principal do GitQuest (Fiel ao Mockup) -->
+    <header class="game-navbar">
+        <div class="nav-brand-group">
+            <div class="nav-logo" id="nav-logo">
+                <svg class="nav-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="6" cy="6" r="3"></circle>
+                    <circle cx="18" cy="9" r="3"></circle>
+                    <line x1="6" y1="9" x2="6" y2="15"></line>
+                    <path d="M18 9a9 9 0 0 1-9 9"></path>
+                </svg>
+                <span class="nav-logo-text"><span class="logo-git">Git</span><span class="logo-quest">Quest</span></span>
+            </div>
+            <span class="nav-badge-edu">Educacional</span>
+        </div>
+
+        <nav class="nav-stepper" id="nav-stepper" aria-label="Trilha de Fases">
+            <button class="step-item active" data-step-index="0" type="button" title="Fase 1: O Início (git init)">
+                <span class="step-circle">1</span>
+                <span class="step-label">Início</span>
+            </button>
+            <span class="step-connector"></span>
+
+            <button class="step-item locked" data-step-index="1" type="button" title="Fase 2: Inspeção & Staging (git status / add)" disabled>
+                <span class="step-circle">2</span>
+                <span class="step-label">Add</span>
+            </button>
+            <span class="step-connector"></span>
+
+            <button class="step-item locked" data-step-index="2" type="button" title="Fase 3: O Primeiro Commit (git commit)" disabled>
+                <span class="step-circle">3</span>
+                <span class="step-label">Commit</span>
+            </button>
+            <span class="step-connector"></span>
+
+            <button class="step-item locked" data-step-index="3" type="button" title="Fase 4: A Linha do Tempo (git log)" disabled>
+                <span class="step-circle">4</span>
+                <span class="step-label">Log</span>
+            </button>
+            <span class="step-connector"></span>
+
+            <button class="step-item locked" data-step-index="4" type="button" title="Fase 5: Múltiplos Arquivos" disabled>
+                <span class="step-circle">5</span>
+                <span class="step-label">Arquivos</span>
+            </button>
+            <span class="step-connector"></span>
+
+            <button class="step-item locked" data-step-index="5" type="button" title="Fase 6: Ramificações (git branch / checkout)" disabled>
+                <span class="step-circle">6</span>
+                <span class="step-label">Branches</span>
+            </button>
+        </nav>
+
+        <div class="nav-actions-group">
+            <div class="nav-stats-combo" title="Experiência e progresso das missões">
+                <div class="combo-xp">
+                    <span class="combo-xp-icon">★</span>
+                    <span class="combo-xp-val" id="global-xp">0</span>
+                    <span class="combo-xp-unit">XP</span>
+                </div>
+                <span class="combo-divider"></span>
+                <div class="combo-missions">
+                    <span class="combo-missions-label">Missões <span id="global-stars">0/6</span></span>
+                    <div class="combo-progress">
+                        <div class="combo-progress-bar" id="nav-phases-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="nav-btn nav-btn-guide" id="open-welcome-btn" type="button" title="Guia do GitQuest & Boas-Vindas">
+                Guia
+            </button>
+
+            <button class="nav-btn nav-btn-trail" id="open-missions-btn" type="button" title="Abrir Trilha de Fases Completa">
+                Trilha de Fases
+            </button>
+        </div>
+    </header>
+
     <div id="app">
         <main class="panel-terminal">
             <header class="terminal-header">
@@ -27,7 +109,6 @@
                 <span class="prompt-label" id="prompt-label">guest@gitquest:~$ </span>
                 <input type="text" class="prompt-input" autofocus autocomplete="off" spellcheck="false">
             </footer>
-
         </main>
 
         <section class="panel-pipeline">
@@ -63,82 +144,58 @@
             </div>
         </section>
         <aside class="panel-missions">
+            <!-- Header: Top com Fase e Dica/XP, e linha do título com botão Próxima Fase diretamente ao lado de O Início -->
             <header class="mission-header">
-                <div class="mission-header-left">
-                    <h2 class="mission-title" id="mission-title-trigger" title="Clique para abrir a trilha de missões">Missão 01: O Início</h2>
-
-                    <span id="mission-step-indicator" class="mission-step-indicator">
-                        Fase atual: 1/6
-                    </span>
+                <div class="mission-header-top">
+                    <span class="mission-phase-label" id="mission-step-indicator">Fase 1 de 6</span>
+                    <div class="mission-header-meta">
+                        <button class="btn-hint" id="mission-hint-btn" type="button" title="Revelar dica pedagógica (limite de 3 por fase)">
+                            <span class="hint-btn-text">Pedir Dica</span>
+                            <span class="hint-badge" id="mission-hint-badge">3 restantes</span>
+                        </button>
+                        <span class="mission-badge" id="mission-xp-badge">+50 XP</span>
+                    </div>
                 </div>
-                <div class="mission-header-actions">
-                    <button class="btn-open-modal" id="open-welcome-btn" title="Guia de Boas-Vindas & Ajuda">❓ Ajuda</button>
-                    <button class="btn-open-modal" id="open-missions-btn" title="Abrir Trilha de Missões">🗺️ Trilha</button>
-                    <span class="mission-badge">+50 XP</span>
+
+                <div class="mission-title-row">
+                    <h2 class="mission-title" id="mission-title-trigger" title="Clique para abrir a trilha de missões">Missão 01: O Início</h2>
+                    <!-- Botão de Próxima Fase posicionado diretamente ao lado do título -->
+                    <div class="mission-actions-inline" id="mission-actions">
+                        <button class="btn-next-mission disabled" id="next-mission-btn" type="button" title="Complete os objetivos da fase para avançar" disabled>
+                            Próxima Fase ➔
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            <p class="mission-description">
-                Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a
-                rastrear seus arquivos.
-            </p>
-
-            <!-- Checklist de Objetivos da Missão (GEG-18) -->
-            <div class="mission-checklist-container">
-                <h4 class="mission-section-label">Objetivos da Fase</h4>
-                <ul class="mission-checklist" id="mission-checklist">
-                    <!-- Gerado dinamicamente -->
-                </ul>
-            </div>
-
-            <!-- Dicas Pedagógicas da Fase (GEG-19) -->
-            <div class="mission-hint-container" id="mission-hint-container">
-                <div class="hint-header">
-                    <h4 class="mission-section-label">Ajuda Pedagógica</h4>
-                    <button class="btn-hint" id="mission-hint-btn" type="button" title="Revelar dica pedagógica (limite de 3 por fase)">
-                        <span class="hint-btn-icon">💡</span>
-                        <span class="hint-btn-text">Pedir Dica</span>
-                        <span class="hint-badge" id="mission-hint-badge">3 restantes</span>
-                    </button>
+            <div class="mission-cards-container">
+                <!-- 1. Card / Bloco: História da Missão -->
+                <div class="mission-card mission-card-story">
+                    <p class="mission-description">
+                        Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a
+                        rastrear seus arquivos.
+                    </p>
                 </div>
-                <div class="hint-card hidden" id="mission-hint-card">
-                    <div class="hint-card-header">
-                        <span class="hint-level-tag" id="hint-level-tag">Dica 1 de 3</span>
-                    </div>
-                    <p class="hint-text" id="mission-hint-text"></p>
+
+                <!-- 2. Card / Bloco: Objetivos da Fase -->
+                <div class="mission-card mission-card-checklist">
+                    <h4 class="mission-section-label">Objetivos da Fase</h4>
+                    <ul class="mission-checklist" id="mission-checklist">
+                        <!-- Gerado dinamicamente -->
+                    </ul>
                 </div>
-            </div>
 
-            <div class="mission-instruction">
-                <p>Comando esperado:</p>
-                <code>git init</code>
-            </div>
-
-            <!-- Banner de Fase Concluída & Avanço (GEG-18) -->
-            <div class="mission-actions hidden" id="mission-actions">
-                <div class="mission-completed-card">
-                    <div class="completed-meta">
-                        <span class="completed-icon">✔</span>
-                        <div class="completed-labels">
-                            <span class="completed-title">Fase Concluída!</span>
-                            <span class="completed-subtitle">Objetivos atingidos com sucesso</span>
+                <!-- 3. Card / Bloco: Dica revelada (aparece só após pedir dica) (GEG-19) -->
+                <div class="mission-card mission-card-hint hidden" id="mission-hint-container">
+                    <div class="hint-card hidden" id="mission-hint-card">
+                        <div class="hint-card-header">
+                            <span class="hint-level-tag" id="hint-level-tag">Dica 1 de 3</span>
                         </div>
+                        <p class="hint-text" id="mission-hint-text"></p>
                     </div>
-                    <button class="btn-next-mission" id="next-mission-btn" type="button" title="Avançar para a próxima fase">
-                        Próxima Fase ➔
-                    </button>
                 </div>
             </div>
         </aside>
-    </div>
-
-    <!-- Badge Global de Status (Mockup) -->
-    <div class="global-stats-pill">
-        <span class="pill-label">XP</span>
-        <span class="pill-val" id="global-xp">0</span>
-        <span class="pill-sep">·</span>
-        <span class="pill-icon">⭐</span>
-        <span class="pill-stars" id="global-stars">0/6</span>
     </div>
 
     <!-- Modal: Selecione uma Missão (Fiel ao Mockup) -->

@@ -8,7 +8,7 @@ export const missions = [
         description: "Você acabou de iniciar um novo projeto. Crie e inicialize o repositório Git local para começar a rastrear seus arquivos.",
         command: "git init",
         checklist: [
-            { text: "Inicializar o repositório Git local", checkKey: "initialized" }
+            { text: "Inicializar o repositório Git local com 'git init'", checkKey: "initialized" }
         ],
         hints: [
             "Repositórios Git precisam ser inicializados na raiz do projeto para criar a pasta oculta .git, que armazena todo o histórico.",
