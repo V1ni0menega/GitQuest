@@ -66,6 +66,10 @@
             <header class="mission-header">
                 <div class="mission-header-left">
                     <h2 class="mission-title" id="mission-title-trigger" title="Clique para abrir a trilha de missões">Missão 01: O Início</h2>
+
+                    <span id="mission-step-indicator" class="mission-step-indicator">
+                        Fase atual: 1/6
+                    </span>
                 </div>
                 <div class="mission-header-actions">
                     <button class="btn-open-modal" id="open-welcome-btn" title="Guia de Boas-Vindas & Ajuda">❓ Ajuda</button>
@@ -79,9 +83,24 @@
                 rastrear seus arquivos.
             </p>
 
+            <!-- Checklist de Objetivos da Missão (GEG-18) -->
+            <div class="mission-checklist-container">
+                <h4 class="mission-section-label">Objetivos da Fase</h4>
+                <ul class="mission-checklist" id="mission-checklist">
+                    <!-- Gerado dinamicamente -->
+                </ul>
+            </div>
+
             <div class="mission-instruction">
                 <p>Comando esperado:</p>
                 <code>git init</code>
+            </div>
+
+            <!-- Botão de Avanço de Fase (GEG-18) -->
+            <div class="mission-actions">
+                <button class="btn-next-mission hidden" id="next-mission-btn" title="Avançar para a próxima missão">
+                    Avançar para Próxima Fase ➔
+                </button>
             </div>
         </aside>
     </div>
@@ -196,6 +215,51 @@
                         Bora Codar!
                     </button>
                 </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Vitória da Trilha (GEG-18) -->
+    <div id="victory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="victory-modal-title">
+        <div class="modal-window victory-window">
+            <header class="modal-header">
+                <div class="modal-window-controls">
+                    <button class="modal-dot dot-red" id="close-victory-dot" title="Fechar"></button>
+                    <span class="modal-dot dot-yellow"></span>
+                    <span class="modal-dot dot-green"></span>
+                </div>
+                <span id="victory-modal-title" class="modal-title">Trilha Concluída</span>
+                <button class="modal-close-btn" id="close-victory-btn" aria-label="Fechar">&times;</button>
+            </header>
+
+            <div class="victory-body">
+                <div class="victory-trophy">🏆</div>
+                <h2>Parabéns, Desenvolvedor!</h2>
+                <p class="victory-subtitle">Você dominou o ciclo completo dos fundamentos do Git e concluiu todas as missões disponíveis!</p>
+
+                <div class="victory-stats">
+                    <div class="victory-stat-card">
+                        <span class="victory-stat-val" id="victory-final-xp">200</span>
+                        <span class="victory-stat-lbl">XP TOTAL</span>
+                    </div>
+                    <div class="victory-stat-card">
+                        <span class="victory-stat-val">100%</span>
+                        <span class="victory-stat-lbl">PROGRESSO</span>
+                    </div>
+                    <div class="victory-stat-card">
+                        <span class="victory-stat-val">NÍVEL 1</span>
+                        <span class="victory-stat-lbl">GIT MASTER</span>
+                    </div>
+                </div>
+
+                <div class="victory-actions">
+                    <button class="welcome-cta-btn" id="victory-view-trail-btn">
+                        Ver Trilha de Missões
+                    </button>
+                    <button class="btn-secondary" id="victory-keep-playing-btn">
+                        Continuar no Terminal
+                    </button>
+                </div>
             </div>
         </div>
     </div>

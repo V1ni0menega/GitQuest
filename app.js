@@ -6,8 +6,9 @@
 
 import { missions } from './js/missions-data.js'
 import { showRetroCelebration } from './js/toast.js'
-import { closeMissionsModal, updateModalAndStatsUI, initModalEvents } from './js/modal.js'
+import { closeMissionsModal, updateModalAndStatsUI, initModalEvents, openMissionsModal } from './js/modal.js'
 import { initWelcomeModal, openWelcomeModal } from './js/welcome-modal.js'
+import { initVictoryModal, openVictoryModal } from './js/victory-modal.js'
 
 // ─────────────────────────────────────────────
 // 1. SELETORES
@@ -29,6 +30,9 @@ const missionTitleElement       = document.querySelector('.mission-title')
 const missionDescriptionElement = document.querySelector('.mission-description')
 const missionXpElement          = document.querySelector('.mission-badge')
 const missionCommandElement     = document.querySelector('.mission-instruction code')
+const missionStepIndicator      = document.getElementById('mission-step-indicator')
+const missionChecklist          = document.getElementById('mission-checklist')
+const nextMissionBtn            = document.getElementById('next-mission-btn')
 
 // Seletores do Terminal e Pipeline
 const promptLabel          = document.getElementById('prompt-label')
@@ -51,6 +55,7 @@ const gitState = {
     position: 0,
     xp : 0,
     currentMissionIndex: 0,
+    victoryShown: false,
 }
 
 
@@ -163,6 +168,11 @@ function updatePromptAndPipelineBranch() {
     }
 }
 
+function isMissionCompleted(mission) {
+    if (!mission || !mission.checklist) return false
+    return mission.checklist.every(item => Boolean(gitState[item.checkKey]))
+}
+
 function renderMission() {
     const current = missions[gitState.currentMissionIndex]
 
@@ -171,12 +181,62 @@ function renderMission() {
         missionDescriptionElement.textContent = current.description
         missionXpElement.textContent = '+' + current.xp + ' XP'
         missionCommandElement.textContent = current.command
+        if (missionStepIndicator) {
+            missionStepIndicator.textContent = 'Fase ' + (gitState.currentMissionIndex + 1) + ' de ' + missions.length
+        }
+
+        // Renderiza o checklist de objetivos da missão (GEG-18)
+        if (missionChecklist && current.checklist) {
+            missionChecklist.innerHTML = ''
+            current.checklist.forEach(item => {
+                const isDone = Boolean(gitState[item.checkKey])
+                const li = document.createElement('li')
+                li.className = 'checklist-item' + (isDone ? ' completed' : '')
+                li.innerHTML = `
+                    <span class="checklist-box">${isDone ? '✔' : ''}</span>
+                    <span class="checklist-text">${item.text}</span>
+                `
+                missionChecklist.appendChild(li)
+            })
+        }
+
+        // Exibe o botão de avançar caso a missão atual já esteja cumprida (GEG-18)
+        const allCompleted = isMissionCompleted(current)
+        if (nextMissionBtn) {
+            if (allCompleted && gitState.currentMissionIndex < missions.length - 1) {
+                nextMissionBtn.classList.remove('hidden')
+            } else {
+                nextMissionBtn.classList.add('hidden')
+            }
+        }
     } else {
         // 🎉 ESTADO DE VITÓRIA (quando terminar todas as missões)!
         missionTitleElement.textContent = '🏆 Trilha Concluída!'
+        if (missionStepIndicator) {
+            missionStepIndicator.textContent = 'Trilha 100% concluída'
+        }
         missionDescriptionElement.textContent = 'Parabéns, dev! Você dominou o ciclo completo do Git: init, add, commit e branches!'
         missionXpElement.textContent = 'Nível 1 • ' + gitState.xp + ' XP'
         missionCommandElement.textContent = 'git status / git branch'
+
+        if (missionChecklist) {
+            missionChecklist.innerHTML = `
+                <li class="checklist-item completed">
+                    <span class="checklist-box">✔</span>
+                    <span class="checklist-text">Todas as missões desta trilha foram concluídas!</span>
+                </li>
+            `
+        }
+
+        if (nextMissionBtn) {
+            nextMissionBtn.classList.add('hidden')
+        }
+
+        // Exibe o modal de vitória (GEG-18)
+        if (!gitState.victoryShown) {
+            gitState.victoryShown = true
+            openVictoryModal(gitState.xp)
+        }
     }
 
     // Sincroniza o Modal, o Pill Global e a visualização da branch
@@ -320,10 +380,16 @@ function processCommand(command) {
                 printOutput('Repositório Git inicializado com sucesso!', 'success')
 
                 gitState.xp += 50
-                gitState.currentMissionIndex++
                 renderMission()
                 updatePromptAndPipelineBranch()
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
+
+                setTimeout(() => {
+                    if (gitState.currentMissionIndex === 0) {
+                        gitState.currentMissionIndex = 1
+                        renderMission()
+                    }
+                }, 1600)
             }
             break
         case 'git add':
@@ -357,9 +423,15 @@ function processCommand(command) {
             printOutput('Arquivos adicionados ao staging area!', 'success')
 
             gitState.xp += 50
-            gitState.currentMissionIndex++
             renderMission()
             showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
+
+            setTimeout(() => {
+                if (gitState.currentMissionIndex === 1) {
+                    gitState.currentMissionIndex = 2
+                    renderMission()
+                }
+            }, 1600)
             break
 
         case 'git commit':
@@ -398,9 +470,15 @@ function processCommand(command) {
             printOutput('3 files changed, 3 insertions(+)', 'success')
 
             gitState.xp += 100
-            gitState.currentMissionIndex++
             renderMission()
             showRetroCelebration('+100 XP CONQUISTADO!', 'TRILHA BÁSICA CONCLUÍDA!')
+
+            setTimeout(() => {
+                if (gitState.currentMissionIndex === 2) {
+                    gitState.currentMissionIndex = 3
+                    renderMission()
+                }
+            }, 1600)
             break
         default:
             printOutput('Comando não reconhecido: ' + command,'error')
@@ -480,6 +558,30 @@ initWelcomeModal({
         promptInput.focus()
     }
 })
+
+// ─── Eventos do Modal de Vitória (GEG-18) ───
+initVictoryModal({
+    onViewTrail: () => {
+        openMissionsModal()
+    },
+    onContinue: () => {
+        promptInput.focus()
+    }
+})
+
+// ─── Botão de Avanço Manual de Missão (GEG-18) ───
+if (nextMissionBtn) {
+    nextMissionBtn.addEventListener('click', () => {
+        if (gitState.currentMissionIndex < missions.length) {
+            gitState.currentMissionIndex++
+            renderMission()
+            promptInput.focus()
+            if (missions[gitState.currentMissionIndex]) {
+                printOutput(`Navegando para ${missions[gitState.currentMissionIndex].title}!`)
+            }
+        }
+    })
+}
 
 // ─── Inicialização da Aplicação ───
 // Sincroniza a interface com o estado inicial ao carregar a página
