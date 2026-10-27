@@ -53,6 +53,11 @@
     box-sizing: border-box;
 }
 
+/* Utilitário Global */
+.hidden {
+    display: none !important;
+}
+
 body {
     font-family: var(--font-terminal);
     font-size: var(--font-size-base);
@@ -64,13 +69,16 @@ body {
 #app{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1.25fr);
     grid-template-areas:
         "terminal pipeline"
         "terminal missions";
     height: 100vh;
+    max-height: 100vh;
     padding: var(--spacing-md);
     gap: var(--spacing-md);
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .button{
     display: inline-block;
@@ -101,11 +109,11 @@ body {
     grid-area: terminal;
     background-color: var(--background-secondary);
     border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    
-
+    min-height: 0;
+    overflow: hidden;
 }
 .terminal-output{
     padding-top: 0.5rem;
@@ -159,53 +167,59 @@ body {
     grid-area: missions;
     background-color: var(--background-secondary);
     border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .mission-header{
     display:flex;
     justify-content:space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 .mission-badge{
     background-color: var(--background-primary);
     color: var(--accent-color);
-    padding: 4px 8px;
+    padding: 3px 8px;
     border-radius: var(--border-radius-sm);
     font-size: var(--font-size-sm);
     font-weight: bold;
 }
 
 .mission-description{
-    font-size: var(--font-size-base);
+    font-size: 13px;
     color: var(--text-secondary);
-    margin-bottom: var(--spacing-md);
-    line-height: 1.5;
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.45;
 }
 .mission-instruction{
     background-color: var(--background-primary);
-    padding: var(--spacing-md);
+    padding: 8px 12px;
     border-radius: var(--border-radius-sm);
-    border-left: 5px solid var(--accent-color);
+    border-left: 4px solid var(--accent-color);
+    font-size: 13px;
+    margin-top: 4px;
     code{
         display: block;
-        padding-top: var(--spacing-sm);
+        padding-top: 2px;
         color: var(--accent-terminal);
         font-weight: bold;
     }
 }
 .mission-step-indicator{
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color:var(--text-secondary);
     text-transform:uppercase;
-    margin-top:4px;
+    margin-top:2px;
 }
 
 /* Checklist de Objetivos da Missão (GEG-18) */
 .mission-checklist-container {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 .mission-section-label {
@@ -370,43 +384,93 @@ body {
     line-height: 1.45;
 }
 
-/* Botão de Avançar Fase (GEG-18) */
+/* Banner de Fase Concluída & Avanço (GEG-18) */
 .mission-actions {
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    animation: fadeInBanner 0.3s ease-out;
 }
 
-.btn-next-mission {
-    width: 100%;
-    padding: 10px var(--spacing-md);
-    background: linear-gradient(135deg, #10b981, #059669);
-    border: none;
+@keyframes fadeInBanner {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mission-completed-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.35);
     border-radius: var(--border-radius-sm);
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
+    padding: 8px 12px;
+}
+
+.completed-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.completed-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #10b981;
+    color: #0b0f19;
+    font-size: 11px;
+    font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-    animation: pulseNextBtn 2.2s infinite ease-in-out;
+    flex-shrink: 0;
+}
+
+.completed-labels {
+    display: flex;
+    flex-direction: column;
+}
+
+.completed-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #10b981;
+    line-height: 1.2;
+}
+
+.completed-subtitle {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
+.btn-next-mission {
+    padding: 6px 14px;
+    background: #10b981;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: #0b0f19;
+    font-weight: 700;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .btn-next-mission:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
-    filter: brightness(1.1);
-}
-
-@keyframes pulseNextBtn {
-    0%, 100% {
-        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-    }
-    50% {
-        box-shadow: 0 4px 22px rgba(16, 185, 129, 0.6);
-    }
+    background: #34d399;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
 }
 
 /* Painel de Estágios (Pipeline) */
@@ -414,14 +478,44 @@ body {
     grid-area: pipeline;
     background-color: var(--background-secondary);
     border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .pipeline-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Scrollbars Estilizadas */
+.panel-missions::-webkit-scrollbar,
+.panel-pipeline::-webkit-scrollbar,
+.terminal-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-missions::-webkit-scrollbar-track,
+.panel-pipeline::-webkit-scrollbar-track,
+.terminal-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-missions::-webkit-scrollbar-thumb,
+.panel-pipeline::-webkit-scrollbar-thumb,
+.terminal-output::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+.panel-missions::-webkit-scrollbar-thumb:hover,
+.panel-pipeline::-webkit-scrollbar-thumb:hover,
+.terminal-output::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .pipeline-branch-badge {

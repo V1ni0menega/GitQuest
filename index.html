@@ -114,11 +114,20 @@
                 <code>git init</code>
             </div>
 
-            <!-- Botão de Avanço de Fase (GEG-18) -->
-            <div class="mission-actions">
-                <button class="btn-next-mission hidden" id="next-mission-btn" title="Avançar para a próxima missão">
-                    Avançar para Próxima Fase ➔
-                </button>
+            <!-- Banner de Fase Concluída & Avanço (GEG-18) -->
+            <div class="mission-actions hidden" id="mission-actions">
+                <div class="mission-completed-card">
+                    <div class="completed-meta">
+                        <span class="completed-icon">✔</span>
+                        <div class="completed-labels">
+                            <span class="completed-title">Fase Concluída!</span>
+                            <span class="completed-subtitle">Objetivos atingidos com sucesso</span>
+                        </div>
+                    </div>
+                    <button class="btn-next-mission" id="next-mission-btn" type="button" title="Avançar para a próxima fase">
+                        Próxima Fase ➔
+                    </button>
+                </div>
             </div>
         </aside>
     </div>

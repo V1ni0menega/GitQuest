@@ -32,6 +32,7 @@ const missionXpElement          = document.querySelector('.mission-badge')
 const missionCommandElement     = document.querySelector('.mission-instruction code')
 const missionStepIndicator      = document.getElementById('mission-step-indicator')
 const missionChecklist          = document.getElementById('mission-checklist')
+const missionActions            = document.getElementById('mission-actions')
 const nextMissionBtn            = document.getElementById('next-mission-btn')
 
 // Seletores de Dicas Pedagógicas (GEG-19)
@@ -251,13 +252,20 @@ function renderMission() {
         // Sincroniza o componente de dicas da fase (GEG-19)
         updateHintUI()
 
-        // Exibe o botão de avançar caso a missão atual já esteja cumprida (GEG-18)
+        // Exibe o banner de avanço caso a missão atual já esteja cumprida (GEG-18)
         const allCompleted = isMissionCompleted(current)
-        if (nextMissionBtn) {
-            if (allCompleted && gitState.currentMissionIndex < missions.length - 1) {
-                nextMissionBtn.classList.remove('hidden')
+        if (missionActions) {
+            if (allCompleted) {
+                missionActions.classList.remove('hidden')
+                if (nextMissionBtn) {
+                    if (gitState.currentMissionIndex === missions.length - 1) {
+                        nextMissionBtn.textContent = 'Concluir Trilha 🏆'
+                    } else {
+                        nextMissionBtn.textContent = 'Próxima Fase ➔'
+                    }
+                }
             } else {
-                nextMissionBtn.classList.add('hidden')
+                missionActions.classList.add('hidden')
             }
         }
     } else {
@@ -279,11 +287,10 @@ function renderMission() {
             `
         }
 
-        // Oculta dicas no estado final de vitória
+        // Oculta dicas e banner no estado final de vitória
         updateHintUI()
-
-        if (nextMissionBtn) {
-            nextMissionBtn.classList.add('hidden')
+        if (missionActions) {
+            missionActions.classList.add('hidden')
         }
 
         // Exibe o modal de vitória (GEG-18)
@@ -522,13 +529,6 @@ function processCommand(command) {
                 renderMission()
                 updatePromptAndPipelineBranch()
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 01: O INÍCIO')
-
-                setTimeout(() => {
-                    if (gitState.currentMissionIndex === 0) {
-                        gitState.currentMissionIndex = 1
-                        renderMission()
-                    }
-                }, 1600)
             }
             break
         case 'git add':
@@ -567,13 +567,6 @@ function processCommand(command) {
             gitState.xp += 50
             renderMission()
             showRetroCelebration('+50 XP CONQUISTADO!', 'MISSÃO 02: STAGING AREA')
-
-            setTimeout(() => {
-                if (gitState.currentMissionIndex === 1) {
-                    gitState.currentMissionIndex = 2
-                    renderMission()
-                }
-            }, 1600)
             break
 
         case 'git commit':
@@ -619,13 +612,6 @@ function processCommand(command) {
             gitState.xp += 100
             renderMission()
             showRetroCelebration('+100 XP CONQUISTADO!', 'TRILHA BÁSICA CONCLUÍDA!')
-
-            setTimeout(() => {
-                if (gitState.currentMissionIndex === 2) {
-                    gitState.currentMissionIndex = 3
-                    renderMission()
-                }
-            }, 1600)
             break
         default:
             handlePedagogicalError(command, parsed)
@@ -719,13 +705,24 @@ initVictoryModal({
 // ─── Botão de Avanço Manual de Missão (GEG-18) ───
 if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
-        if (gitState.currentMissionIndex < missions.length) {
+        const current = missions[gitState.currentMissionIndex]
+        if (!isMissionCompleted(current)) {
+            printOutput('⚠️ Você precisa concluir todos os objetivos desta fase antes de avançar!', 'warning')
+            return
+        }
+
+        if (gitState.currentMissionIndex < missions.length - 1) {
             gitState.currentMissionIndex++
             renderMission()
             promptInput.focus()
             if (missions[gitState.currentMissionIndex]) {
-                printOutput(`Navegando para ${missions[gitState.currentMissionIndex].title}!`)
+                printOutput(`Navegando para ${missions[gitState.currentMissionIndex].title}!`, 'info')
             }
+        } else if (gitState.currentMissionIndex === missions.length - 1) {
+            // Última fase: avança para o estado final de vitória
+            gitState.currentMissionIndex++
+            renderMission()
+            openVictoryModal(gitState.xp)
         }
     })
 }
