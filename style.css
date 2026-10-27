@@ -263,6 +263,113 @@ body {
     color: #0b0f19;
 }
 
+/* Container e Botão de Dicas Pedagógicas (GEG-19) */
+.mission-hint-container {
+    margin-bottom: var(--spacing-md);
+}
+
+.hint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.btn-hint {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 4px 10px;
+    border-radius: var(--border-radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-hint:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    color: #fbbf24;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.btn-hint:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.hint-btn-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.hint-badge {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fef08a;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.btn-hint:disabled .hint-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.hint-card {
+    background: rgba(245, 158, 11, 0.07);
+    border-left: 3px solid #f59e0b;
+    border-top: 1px solid rgba(245, 158, 11, 0.15);
+    border-right: 1px solid rgba(245, 158, 11, 0.15);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+    padding: 10px 12px;
+    border-radius: var(--border-radius-sm);
+    margin-top: 6px;
+    animation: fadeInHint 0.25s ease-out;
+}
+
+@keyframes fadeInHint {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hint-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.hint-level-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #f59e0b;
+}
+
+.hint-text {
+    font-size: 12px;
+    color: #e2e8f0;
+    line-height: 1.45;
+}
+
 /* Botão de Avançar Fase (GEG-18) */
 .mission-actions {
     margin-top: var(--spacing-md);

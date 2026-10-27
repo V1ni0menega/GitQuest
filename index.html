@@ -91,6 +91,24 @@
                 </ul>
             </div>
 
+            <!-- Dicas Pedagógicas da Fase (GEG-19) -->
+            <div class="mission-hint-container" id="mission-hint-container">
+                <div class="hint-header">
+                    <h4 class="mission-section-label">Ajuda Pedagógica</h4>
+                    <button class="btn-hint" id="mission-hint-btn" type="button" title="Revelar dica pedagógica (limite de 3 por fase)">
+                        <span class="hint-btn-icon">💡</span>
+                        <span class="hint-btn-text">Pedir Dica</span>
+                        <span class="hint-badge" id="mission-hint-badge">3 restantes</span>
+                    </button>
+                </div>
+                <div class="hint-card hidden" id="mission-hint-card">
+                    <div class="hint-card-header">
+                        <span class="hint-level-tag" id="hint-level-tag">Dica 1 de 3</span>
+                    </div>
+                    <p class="hint-text" id="mission-hint-text"></p>
+                </div>
+            </div>
+
             <div class="mission-instruction">
                 <p>Comando esperado:</p>
                 <code>git init</code>
