@@ -504,6 +504,36 @@ body {
     text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
+/* Linhas Semânticas do Git Diff (GEG-21) */
+.terminal-output li.diff-add {
+    color: #34d399;
+    text-shadow: 0 0 10px rgba(52, 211, 153, 0.35);
+    background: rgba(16, 185, 129, 0.08);
+    border-left: 2px solid #10b981;
+    padding-left: 6px;
+    margin: 1px 0;
+}
+
+.terminal-output li.diff-remove {
+    color: #f87171;
+    text-shadow: 0 0 10px rgba(248, 113, 113, 0.35);
+    background: rgba(239, 68, 68, 0.08);
+    border-left: 2px solid #ef4444;
+    padding-left: 6px;
+    margin: 1px 0;
+}
+
+.terminal-output li.diff-header {
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.terminal-output li.diff-range {
+    color: #38bdf8;
+    font-style: italic;
+    opacity: 0.9;
+}
+
 /* Prompt do Terminal com brilho */
 .terminal-prompt {
     display: flex;

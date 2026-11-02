@@ -59,6 +59,7 @@ const gitState = {
     comitted: false,      // Fase 3: git commit
     commits: [],          // Histórico de commits [{ hash, branch, author, date, msg }]
     logViewed: false,     // Fase 4: git log
+    diffViewed: false,    // GEG-21: git diff explorado
     phase5Spawned: false, // Fase 5: geração de múltiplos arquivos
     phase5Added: false,   // Fase 5: git add . para novos arquivos
     phase5Committed: false,// Fase 5: segundo commit
@@ -126,7 +127,7 @@ function parserCommand(command) {
         }
 
         const subCommand = words[1]
-        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status') {
+        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status' || subCommand === 'diff') {
             return {
                 base: 'git ' + subCommand,
                 arg: words.slice(2).join(' '),
@@ -166,6 +167,120 @@ function createFileItem(name, branchTag = '') {
     }
 
     return div
+}
+
+// Simulação de Diff Visual Realista (GEG-21)
+// Exibe diferenças de linhas (+ verde, - vermelho) entre Working Directory, Staging e HEAD
+function renderDiffOutput(arg = '') {
+    const isStaged = arg.includes('--staged') || arg.includes('--cached')
+    const targetFile = arg.replace('--staged', '').replace('--cached', '').trim()
+
+    // 1. Caso: Repositório sem commits e arquivos ainda não indexados no Staging
+    if (!gitState.filesAdded && !gitState.comitted) {
+        if (isStaged) {
+            printOutput('Nenhuma alteração na Staging Area para comparar com HEAD.', 'info')
+            printOutput('Dica: use "git add <arquivo>" para indexar antes de ver com "git diff --staged".', 'warning')
+            return
+        }
+
+        if (!targetFile || targetFile === 'app.js') {
+            printOutput('diff --git a/app.js b/app.js', 'diff-header')
+            printOutput('--- a/app.js', 'diff-header')
+            printOutput('+++ b/app.js', 'diff-header')
+            printOutput('@@ -1,3 +1,6 @@', 'diff-range')
+            printOutput('+ // GitQuest Engine Core', 'diff-add')
+            printOutput('+ const gameTitle = "GitQuest";', 'diff-add')
+            printOutput('+ console.log("Sistema inicializado com sucesso!");', 'diff-add')
+        }
+
+        if (!targetFile || targetFile === 'style.css') {
+            if (!targetFile) printOutput('')
+            printOutput('diff --git a/style.css b/style.css', 'diff-header')
+            printOutput('--- a/style.css', 'diff-header')
+            printOutput('+++ b/style.css', 'diff-header')
+            printOutput('@@ -1,2 +1,5 @@', 'diff-range')
+            printOutput('+ :root {', 'diff-add')
+            printOutput('+     --terminal-bg: #0b0f19;', 'diff-add')
+            printOutput('+     --accent-green: #10b981;', 'diff-add')
+            printOutput('+ }', 'diff-add')
+        }
+        return
+    }
+
+    // 2. Caso: Arquivos indexados na Staging Area (após git add ., antes do commit)
+    if (gitState.filesAdded && !gitState.comitted) {
+        if (!isStaged) {
+            printOutput('Nenhuma alteração pendente entre o Working Directory e a Staging Area.', 'info')
+            printOutput('Dica: seus arquivos já foram indexados! Use "git diff --staged" para ver as alterações prontas para o commit.', 'warning')
+            return
+        }
+
+        if (!targetFile || targetFile === 'app.js') {
+            printOutput('diff --git a/app.js b/app.js (staged)', 'diff-header')
+            printOutput('--- /dev/null', 'diff-header')
+            printOutput('+++ b/app.js', 'diff-header')
+            printOutput('@@ -0,0 +1,5 @@', 'diff-range')
+            printOutput('+ // GitQuest Engine Core (Indexado para Commit)', 'diff-add')
+            printOutput('+ const gameTitle = "GitQuest";', 'diff-add')
+            printOutput('+ console.log("Pronto para o snapshot!");', 'diff-add')
+        }
+
+        if (!targetFile || targetFile === 'index.html') {
+            if (!targetFile) printOutput('')
+            printOutput('diff --git a/index.html b/index.html (staged)', 'diff-header')
+            printOutput('--- /dev/null', 'diff-header')
+            printOutput('+++ b/index.html', 'diff-header')
+            printOutput('@@ -0,0 +1,4 @@', 'diff-range')
+            printOutput('+ <!DOCTYPE html>', 'diff-add')
+            printOutput('+ <html lang="pt-br">', 'diff-add')
+            printOutput('+ <body><div id="app"></div></body>', 'diff-add')
+        }
+        return
+    }
+
+    // 3. Caso: Fase 5 (Múltiplos novos arquivos: components.js, README.md)
+    if (gitState.currentMissionIndex === 4) {
+        if (!gitState.phase5Added) {
+            if (isStaged) {
+                printOutput('Nenhuma alteração na Staging Area. Use "git add ." para indexar.', 'info')
+                return
+            }
+            printOutput('diff --git a/components.js b/components.js', 'diff-header')
+            printOutput('--- a/components.js', 'diff-header')
+            printOutput('+++ b/components.js', 'diff-header')
+            printOutput('@@ -1,2 +1,5 @@', 'diff-range')
+            printOutput('- // Versão legada', 'diff-remove')
+            printOutput('+ export function createCard(title) {', 'diff-add')
+            printOutput('+     return `<div class="card">${title}</div>`;', 'diff-add')
+            printOutput('+ }', 'diff-add')
+            printOutput('')
+            printOutput('diff --git a/README.md b/README.md', 'diff-header')
+            printOutput('--- /dev/null', 'diff-header')
+            printOutput('+++ b/README.md', 'diff-header')
+            printOutput('@@ -0,0 +1,3 @@', 'diff-range')
+            printOutput('+ # Documentação GitQuest', 'diff-add')
+            printOutput('+ Guia interativo do desenvolvedor.', 'diff-add')
+            return
+        } else if (gitState.phase5Added && !gitState.phase5Committed) {
+            if (!isStaged) {
+                printOutput('Nenhuma alteração pendente entre o Working Directory e a Staging Area.', 'info')
+                printOutput('Dica: use "git diff --staged" para ver as alterações prontas para o commit.', 'warning')
+                return
+            }
+            printOutput('diff --git a/components.js b/components.js (staged)', 'diff-header')
+            printOutput('--- a/components.js', 'diff-header')
+            printOutput('+++ b/components.js', 'diff-header')
+            printOutput('@@ -1,2 +1,5 @@', 'diff-range')
+            printOutput('- // Versão legada', 'diff-remove')
+            printOutput('+ export function createCard(title) {', 'diff-add')
+            printOutput('+     return `<div class="card">${title}</div>`;', 'diff-add')
+            printOutput('+ }', 'diff-add')
+            return
+        }
+    }
+
+    // 4. Caso padrão: Working tree limpa
+    printOutput('working tree clean. Nenhuma diferença em relação ao último commit (HEAD).', 'success')
 }
 
 function updatePromptAndPipelineBranch() {
@@ -390,7 +505,10 @@ function handlePedagogicalError(command, parsed) {
             'br': 'branch',
             'int': 'init',
             'ini': 'init',
-            'initt': 'init'
+            'initt': 'init',
+            'dif': 'diff',
+            'dff': 'diff',
+            'difff': 'diff'
         }
 
         if (typoMap[sub]) {
@@ -429,7 +547,7 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git log, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git diff, git diff --staged, git log, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
             break
 
         case 'git status':
@@ -484,6 +602,21 @@ function processCommand(command) {
                 gitState.xp += 25
                 renderMission()
                 showRetroCelebration('+25 XP!', 'STATUS DO REPOSITÓRIO INSPECIONADO')
+            }
+            break
+
+        case 'git diff':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                printOutput('Dica: você precisa inicializar o repositório com "git init" antes de checar as diferenças.', 'warning')
+                break
+            }
+
+            renderDiffOutput(parsed.arg)
+
+            if (!gitState.diffViewed) {
+                gitState.diffViewed = true
+                showRetroCelebration('GIT DIFF EXPLORADO!', 'COMPARAÇÃO DE CÓDIGO LINHA A LINHA')
             }
             break
 
