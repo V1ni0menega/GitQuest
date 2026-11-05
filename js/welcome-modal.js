@@ -7,6 +7,7 @@ const closeWelcomeBtn  = document.getElementById('close-welcome-btn')
 const closeWelcomeDot  = document.getElementById('close-welcome-dot')
 const openWelcomeBtn   = document.getElementById('open-welcome-btn')
 const dontShowCheckbox = document.getElementById('welcome-dont-show')
+const welcomeTrailLink = document.getElementById('welcome-trail-link')
 
 /**
  * Abre o modal de boas-vindas.
@@ -33,8 +34,9 @@ export function closeWelcomeModal() {
  * Inicializa os ouvintes de evento do modal de boas-vindas.
  * @param {Object} options
  * @param {Function} options.onStart Callback executado quando o usuário inicia a jornada
+ * @param {Function} options.onOpenTrail Callback executado quando o usuário clica no link da trilha
  */
-export function initWelcomeModal({ onStart } = {}) {
+export function initWelcomeModal({ onStart, onOpenTrail } = {}) {
     if (!welcomeModal) return
 
     // Auto-exibe na primeira visita (se o usuário não marcou para não exibir)
@@ -43,12 +45,23 @@ export function initWelcomeModal({ onStart } = {}) {
         openWelcomeModal()
     }
 
-    // Botão Principal "Bora Codar!"
+    // Botão Principal (Checkmark clássico de confirmação)
     if (startQuestBtn) {
         startQuestBtn.addEventListener('click', () => {
             closeWelcomeModal()
             if (typeof onStart === 'function') {
                 onStart()
+            }
+        })
+    }
+
+    // Link Especial ("Trilha de Missões")
+    if (welcomeTrailLink) {
+        welcomeTrailLink.addEventListener('click', (event) => {
+            event.preventDefault()
+            closeWelcomeModal()
+            if (typeof onOpenTrail === 'function') {
+                onOpenTrail()
             }
         })
     }

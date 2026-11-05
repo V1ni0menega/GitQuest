@@ -227,6 +227,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .nav-stat-pill {
@@ -363,6 +364,8 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-btn-guide {
@@ -691,15 +694,24 @@ body {
     box-shadow: 0 0 16px rgba(16, 185, 129, 0.7);
 }
 
-@keyframes pulse-green {
+.prompt-input::placeholder {
+    color: #34d399;
+    opacity: 0.85;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    font-family: var(--font-terminal);
+}
 
+@keyframes pulse-green {
     0%,
     100% {
         box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        transform: scale(1);
     }
 
     50% {
-        box-shadow: 0 0 16px rgba(16, 185, 129, 0.75);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.85);
+        transform: scale(1.04);
     }
 }
 
@@ -1684,165 +1696,190 @@ body {
 }
 
 /* ─────────────────────────────────────────────
-   MODAL DE BOAS-VINDAS & ONBOARDING
+   MODAL DE BOAS-VINDAS & ONBOARDING (ESTILO CLÁSSICO)
+   Fiel ao design clássico e limpo de ferramentas dev (Learn Git Branching)
    ───────────────────────────────────────────── */
 
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .welcome-window {
-    max-width: 720px;
-    border: 1px solid rgba(6, 182, 212, 0.3);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(6, 182, 212, 0.15);
+    max-width: 680px;
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 8px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.08);
+    overflow: hidden;
+}
+
+.welcome-window .modal-header {
+    background: linear-gradient(to bottom, #162032, #0d1525);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.welcome-window .modal-window-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-window .modal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.welcome-window .modal-dot.dot-red {
+    background-color: #ef4444;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.welcome-window .modal-dot.dot-yellow {
+    background-color: #f59e0b;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.welcome-window .modal-dot.dot-green {
+    background-color: #10b981;
+    border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .welcome-body {
-    padding: var(--spacing-xl);
+    padding: 32px 40px 24px 40px;
+    background: #0f172a;
+    font-family: var(--font-terminal);
+    color: #cbd5e1;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
 }
 
-.welcome-hero {
-    text-align: center;
-}
-
-.welcome-badge {
-    display: inline-block;
-    background: rgba(6, 182, 212, 0.12);
-    border: 1px solid var(--accent-terminal);
-    color: var(--accent-terminal);
-    font-size: 10px;
+.welcome-title {
+    font-family: var(--font-terminal);
+    font-size: 24px;
     font-weight: 700;
-    padding: 3px 12px;
-    border-radius: 20px;
-    letter-spacing: 1.2px;
-    margin-bottom: var(--spacing-sm);
-}
-
-.welcome-hero h2 {
-    font-size: var(--font-size-2xl);
     color: #ffffff;
-    margin-bottom: var(--spacing-sm);
+    text-align: center;
+    margin: 0 0 26px 0;
     letter-spacing: 0.5px;
 }
 
-.welcome-hero p {
-    font-size: 13px;
-    color: #94a3b8;
-    line-height: 1.6;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.welcome-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-md);
-}
-
-.welcome-card {
-    background: #0d1322;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-md);
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.welcome-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(6, 182, 212, 0.2);
-}
-
-.welcome-card-icon {
-    font-size: 26px;
-    margin-bottom: var(--spacing-sm);
-}
-
-.welcome-card h4 {
-    font-size: var(--font-size-sm);
+.welcome-title .logo-git {
     color: #ffffff;
-    margin-bottom: var(--spacing-xs);
+}
+
+.welcome-title .logo-quest {
+    color: #ef4444;
+}
+
+.welcome-p {
+    font-family: var(--font-terminal);
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: #cbd5e1;
+    margin: 0 0 20px 0;
+    text-align: left;
+}
+
+.code-pill {
+    background-color: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--font-terminal);
+    font-size: 13.5px;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+    display: inline-block;
+}
+
+.special-link {
+    color: #f97316;
+    text-decoration: underline;
+    cursor: pointer;
     font-weight: 600;
+    transition: color 0.15s ease;
 }
 
-.welcome-card p {
-    font-size: 11px;
-    color: #94a3b8;
-    line-height: 1.5;
+.special-link:hover {
+    color: #fb923c;
 }
 
-.welcome-card code {
-    background: rgba(0, 0, 0, 0.5);
-    color: var(--accent-terminal);
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-size: 10px;
-}
-
-.welcome-tips {
-    background: rgba(245, 158, 11, 0.08);
-    border-left: 3px solid #f59e0b;
-    border-radius: var(--border-radius-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+.welcome-actions {
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: var(--spacing-md);
-    font-size: 12px;
-    color: var(--text-primary);
+    margin-top: 22px;
 }
 
-.welcome-tips .tip-icon {
-    font-size: 20px;
-    flex-shrink: 0;
+.welcome-check-btn {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.welcome-tips p {
-    line-height: 1.4;
+.welcome-check-btn:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
 }
 
-.welcome-footer {
+.welcome-check-btn:active {
+    transform: scale(0.95);
+}
+
+.welcome-check-icon {
+    width: 48px;
+    height: 40px;
+    color: #10b981;
+}
+
+.welcome-optout {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 18px;
 }
 
 .welcome-checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-size: 12px;
-    color: #94a3b8;
+    font-family: var(--font-terminal);
+    font-size: 11.5px;
+    color: #64748b;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     user-select: none;
+    transition: color 0.15s ease;
+}
+
+.welcome-checkbox-label:hover {
+    color: #94a3b8;
 }
 
 .welcome-checkbox-label input[type="checkbox"] {
-    accent-color: var(--accent-terminal);
+    accent-color: #10b981;
     cursor: pointer;
-}
-
-.welcome-cta-btn {
-    background: linear-gradient(135deg, #06b6d4, #0284c7);
-    border: none;
-    color: #0b0f19;
-    font-family: var(--font-terminal);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    padding: 10px 24px;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-}
-
-.welcome-cta-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 26px rgba(6, 182, 212, 0.7);
-    filter: brightness(1.1);
 }
 
 /* Modal de Vitória da Trilha (GEG-18) */

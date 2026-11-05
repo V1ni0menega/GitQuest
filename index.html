@@ -53,9 +53,9 @@
             </button>
             <span class="step-connector"></span>
 
-            <button class="step-item locked" data-step-index="4" type="button" title="Fase 5: Múltiplos Arquivos" disabled>
+            <button class="step-item locked" data-step-index="4" type="button" title="Fase 5: Inspeção de Diferenças (git diff)" disabled>
                 <span class="step-circle">5</span>
-                <span class="step-label">Arquivos</span>
+                <span class="step-label">Diff</span>
             </button>
             <span class="step-connector"></span>
 
@@ -231,7 +231,7 @@
                         <button class="level-btn locked" data-mission-index="1" title="Fase 2: git status e git add ." disabled>2</button>
                         <button class="level-btn locked" data-mission-index="2" title="Fase 3: git commit -m ... " disabled>3</button>
                         <button class="level-btn locked" data-mission-index="3" title="Fase 4: git log" disabled>4</button>
-                        <button class="level-btn locked" data-mission-index="4" title="Fase 5: múltiplos arquivos" disabled>5</button>
+                        <button class="level-btn locked" data-mission-index="4" title="Fase 5: git diff e novos arquivos" disabled>5</button>
                         <button class="level-btn locked" data-mission-index="5" title="Fase 6: git branch e checkout" disabled>6</button>
                     </div>
                 </section>
@@ -252,7 +252,7 @@
         </div>
     </div>
 
-    <!-- Modal: Boas-Vindas ao GitQuest (Onboarding) -->
+    <!-- Modal: Boas-Vindas ao GitQuest (Onboarding - Estilo Clássico Learn Git Branching) -->
     <div id="welcome-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-title">
         <div class="modal-window welcome-window">
             <header class="modal-header">
@@ -261,46 +261,42 @@
                     <span class="modal-dot dot-yellow"></span>
                     <span class="modal-dot dot-green"></span>
                 </div>
-                <span id="welcome-modal-title" class="modal-title">Boas-Vindas ao GitQuest</span>
-                <button class="modal-close-btn" id="close-welcome-btn" aria-label="Fechar">&times;</button>
+                <span id="welcome-modal-title" class="modal-title sr-only">Bem-vindo ao GitQuest</span>
+                <button class="modal-close-btn sr-only" id="close-welcome-btn" aria-label="Fechar">&times;</button>
             </header>
 
             <div class="welcome-body">
-                <div class="welcome-hero">
-                    <span class="welcome-badge">GITQUEST • ARCADE DEV</span>
-                    <h2>Aprenda Git Jogando!</h2>
-                    <p>Aqui você não apenas decora comandos: você enxerga os arquivos se movimentando fisicamente entre as áreas do Git em tempo real.</p>
+                <h2 class="welcome-title">Bem-vindo ao <span class="logo-git">Git</span><span class="logo-quest">Quest</span></h2>
+
+                <p class="welcome-p">
+                    Interessado em aprender Git? Bem, você veio ao lugar certo! O "GitQuest" é a forma mais visual e interativa de aprender Git na web; você será desafiado com missões práticas, explicações passo a passo de recursos poderosos e talvez até se divirta ao longo do caminho.
+                </p>
+
+                <p class="welcome-p">
+                    Após este diálogo você verá a variedade de níveis que temos a oferecer. Se você for um iniciante, basta começar pela primeira missão. Se já conhece o básico do Git, experimente avançar diretamente para as missões mais desafiadoras.
+                </p>
+
+                <p class="welcome-p">
+                    Você pode ver todos os comandos disponíveis digitando <span class="code-pill">help</span> no terminal.
+                </p>
+
+                <p class="welcome-p">
+                    PS: Quer ir direto para a lista de fases? Experimente este <a href="#" id="welcome-trail-link" class="special-link">link especial</a>.
+                </p>
+
+                <div class="welcome-actions">
+                    <button class="welcome-check-btn" id="start-quest-btn" title="Iniciar GitQuest" aria-label="Iniciar GitQuest">
+                        <svg viewBox="0 0 24 24" class="welcome-check-icon" width="46" height="40" aria-hidden="true">
+                            <path d="M4 12.5L9.5 18L20 6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
 
-                <div class="welcome-grid">
-                    <div class="welcome-card card-terminal">
-                        <h4>1. Terminal Interativo</h4>
-                        <p>Digite comandos reais do Git (ex: <code>git add .</code>, <code>git commit -m "..."</code>). Use as setas <code>↑</code> e <code>↓</code> para o histórico e digite <code>help</code> para ver atalhos.</p>
-                    </div>
-
-                    <div class="welcome-card card-pipeline">
-                        <h4>2. Pipeline Visual</h4>
-                        <p>Veja seus arquivos transitarem entre <strong>Working</strong> ➔ <strong>Staging</strong> ➔ <strong>Repository</strong> com o ponteiro <strong>HEAD</strong>.</p>
-                    </div>
-
-                    <div class="welcome-card card-missions">
-                        <h4>3. Missões & XP</h4>
-                        <p>Siga os objetivos, ganhe XP e abra o mapa em <strong>Trilha</strong> para escolher ou rever qualquer fase já desbloqueada.</p>
-                    </div>
-                </div>
-
-                <div class="welcome-tips">
-                    <p><strong>Sem medo de errar:</strong> Se executar algo fora de ordem, o terminal te orienta amigavelmente com cores semânticas!</p>
-                </div>
-
-                <footer class="welcome-footer">
+                <div class="welcome-optout">
                     <label class="welcome-checkbox-label">
                         <input type="checkbox" id="welcome-dont-show"> Não exibir automaticamente ao abrir
                     </label>
-                    <button class="welcome-cta-btn" id="start-quest-btn">
-                        Bora Codar!
-                    </button>
-                </footer>
+                </div>
             </div>
         </div>
     </div>
