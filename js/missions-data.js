@@ -78,15 +78,76 @@ export const missions = [
     {
         title: "Missão 06: Ramificações",
         xp: 150,
-        description: "Para desenvolver uma nova funcionalidade sem comprometer a branch principal 'main', crie e alterne para a branch 'feature-auth' usando 'git checkout -b feature-auth'.",
-        command: "git checkout -b feature-auth",
+        description: "Para desenvolver uma nova funcionalidade sem comprometer a branch principal 'main', crie e alterne para a branch 'feature-auth' usando o comando moderno 'git switch -c feature-auth' (ou 'git checkout -b feature-auth').",
+        command: "git switch -c feature-auth",
         checklist: [
             { text: "Criar e alternar para a branch 'feature-auth'", checkKey: "branchCreated" }
         ],
         hints: [
             "Branches permitem criar linhas de desenvolvimento isoladas e paralelas para novas funcionalidades.",
-            "A flag '-b' no git checkout cria a nova branch e já faz a troca imediatamente.",
-            "Comando recomendado: digite 'git checkout -b feature-auth' no terminal."
+            "No Git moderno (v2.23+), o comando 'git switch -c <nome>' cria e alterna para a nova branch de forma limpa e segura.",
+            "Comando recomendado: digite 'git switch -c feature-auth' (ou 'git checkout -b feature-auth') no terminal."
+        ]
+    },
+
+    // ─── Módulo 2: Branches & Fusões ───
+    {
+        title: "Missão 07: O Comando Switch",
+        xp: 100,
+        description: "No Git moderno (v2.23+), o comando 'git switch' foi introduzido para separar a troca de branches do descarte de arquivos. Crie uma nova branch com 'git switch -c feature-login' e em seguida alterne de volta para a 'main' com 'git switch main'.",
+        command: "git switch -c feature-login && git switch main",
+        checklist: [
+            { text: "Criar e alternar com 'git switch -c feature-login'", checkKey: "branchLoginCreated" },
+            { text: "Alternar de volta para 'main' com 'git switch main'", checkKey: "switchedBackToMain" }
+        ],
+        hints: [
+            "A flag '-c' (create) no git switch cria a branch e já muda o ponteiro HEAD para ela.",
+            "Para voltar para a branch principal sem criar nada, execute apenas 'git switch main'.",
+            "Comandos recomendados: primeiro digite 'git switch -c feature-login' e depois 'git switch main'."
+        ]
+    },
+    {
+        title: "Missão 08: Trabalho Isolado",
+        xp: 150,
+        description: "Alterne novamente para a branch de trabalho com 'git switch feature-login'. Arquivos da nova tela ('login.html' e 'login.css') foram detectados! Prepare-os com 'git add .' e grave o snapshot exclusivo dessa branch com 'git commit -m \"feat: tela de login\"'.",
+        command: 'git switch feature-login && git add . && git commit -m "feat: tela de login"',
+        checklist: [
+            { text: "Mudar para a branch 'feature-login' com 'git switch'", checkKey: "onFeatureLogin" },
+            { text: "Gravar o commit exclusivo na branch de feature", checkKey: "featureLoginCommitted" }
+        ],
+        hints: [
+            "Sempre confirme em qual branch você está antes de commitar; o prompt indicará (feature-login).",
+            "Use 'git switch feature-login' para se posicionar, 'git add .' para preparar os arquivos e faça o commit com a flag -m.",
+            "Comandos recomendados: 'git switch feature-login', depois 'git add .', e finalize com 'git commit -m \"feat: tela de login\"'."
+        ]
+    },
+    {
+        title: "Missão 09: Fusão Fast-Forward",
+        xp: 200,
+        description: "A tela de login está pronta e testada! Para integrar suas alterações na linha principal, primeiro volte para a 'main' com 'git switch main', e depois realize a fusão linear direta com 'git merge feature-login'.",
+        command: "git switch main && git merge feature-login",
+        checklist: [
+            { text: "Retornar para a branch principal com 'git switch main'", checkKey: "switchedToMainForMerge" },
+            { text: "Realizar a fusão linear com 'git merge feature-login'", checkKey: "mergeCompleted" }
+        ],
+        hints: [
+            "Regra de ouro do merge: posicione-se SEMPRE na branch de destino (a que receberá o código) antes de fundir.",
+            "Quando a branch principal não recebeu novos commits após a ramificação, o Git avança o ponteiro instantaneamente (Fast-Forward).",
+            "Comandos recomendados: digite 'git switch main' e depois 'git merge feature-login'."
+        ]
+    },
+    {
+        title: "Missão 10: Limpeza de Branches",
+        xp: 100,
+        description: "Com o código da 'feature-login' integrado com segurança na 'main', a branch temporária cumpriu seu papel. Remova a ramificação antiga com 'git branch -d feature-login'.",
+        command: "git branch -d feature-login",
+        checklist: [
+            { text: "Excluir com segurança a branch 'feature-login' com '-d'", checkKey: "branchDeleted" }
+        ],
+        hints: [
+            "A flag '-d' realiza uma exclusão segura, confirmando que a branch já foi fundida antes de deletar.",
+            "Você não pode deletar uma branch se o HEAD estiver nela; certifique-se de estar na 'main'.",
+            "Comando recomendado: digite 'git branch -d feature-login'."
         ]
     }
 ]

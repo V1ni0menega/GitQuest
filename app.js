@@ -64,6 +64,14 @@ const gitState = {
     phase5Added: false,   // Fase 5: git add . para novos arquivos
     phase5Committed: false,// Fase 5: segundo commit
     branchCreated: false, // Fase 6: git branch / checkout para nova branch
+    // ─── Módulo 2: Branches & Fusões ───
+    branchLoginCreated: false,   // Fase 7: git switch -c feature-login
+    switchedBackToMain: false,   // Fase 7: git switch main
+    onFeatureLogin: false,       // Fase 8: git switch feature-login
+    featureLoginCommitted: false,// Fase 8: git commit na feature
+    switchedToMainForMerge: false,// Fase 9: git switch main
+    mergeCompleted: false,       // Fase 9: git merge feature-login
+    branchDeleted: false,        // Fase 10: git branch -d feature-login
     workingFiles: [],
     stagedFiles: [],
     branches: ['main'],
@@ -75,6 +83,9 @@ const gitState = {
     victoryShown: false,
     hintsRevealed: {}, // { [missionIndex]: quantidade_revelada } (limite de 3 por fase)
 }
+
+// Expõe no window para testes e depuração
+window.gitState = gitState
 
 
 
@@ -113,7 +124,7 @@ function parserCommand(command) {
         }
     }
 
-    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature, git branch feature ou git add .)
+    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature, git switch -c feature, git branch feature ou git add .)
     const words = trimmed.split(/\s+/)
     if (words[0] === 'git' && words.length > 2) {
         // Caso especial: git checkout -b <nome>
@@ -122,16 +133,40 @@ function parserCommand(command) {
                 base: 'git checkout',
                 arg: words.length > 3 ? words[3] : '',
                 flag: '-b',
+                rawFlag: '-b',
+                msg: ''
+            }
+        }
+
+        // Caso especial: git switch -c <nome> (ou flags equivalentes -C, -b, --create)
+        if (words[1] === 'switch' && (words[2] === '-c' || words[2] === '-C' || words[2] === '-b' || words[2] === '--create')) {
+            return {
+                base: 'git switch',
+                arg: words.length > 3 ? words[3] : '',
+                flag: '-c',
+                rawFlag: words[2],
+                msg: ''
+            }
+        }
+
+        // Caso especial: git branch -d <nome> ou git branch -D <nome> (GEG-51)
+        if (words[1] === 'branch' && (words[2] === '-d' || words[2] === '-D')) {
+            return {
+                base: 'git branch',
+                arg: words.length > 3 ? words[3] : '',
+                flag: words[2],
+                rawFlag: words[2],
                 msg: ''
             }
         }
 
         const subCommand = words[1]
-        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status' || subCommand === 'diff') {
+        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'switch' || subCommand === 'merge' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status' || subCommand === 'diff') {
             return {
                 base: 'git ' + subCommand,
                 arg: words.slice(2).join(' '),
                 flag: '',
+                rawFlag: '',
                 msg: ''
             }
         }
@@ -482,6 +517,7 @@ function renderMission() {
     updateModalAndStatsUI(gitState.currentMissionIndex, gitState.xp)
     updatePromptAndPipelineBranch()
 }
+window.renderMission = renderMission
 
 
 
@@ -542,7 +578,13 @@ function handlePedagogicalError(command, parsed) {
             'initt': 'init',
             'dif': 'diff',
             'dff': 'diff',
-            'difff': 'diff'
+            'difff': 'diff',
+            'swich': 'switch',
+            'swtich': 'switch',
+            'sw': 'switch',
+            'merg': 'merge',
+            'megre': 'merge',
+            'mrg': 'merge'
         }
 
         if (typoMap[sub]) {
@@ -581,7 +623,7 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git diff, git diff --staged, git log, git branch, git branch <nome>, git checkout <nome>, git checkout -b <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git diff, git diff --staged, git log, git branch, git branch <nome>, git branch -d <nome>, git checkout <nome>, git checkout -b <nome>, git switch <nome>, git switch -c <nome>, git merge <nome>, clear', 'info')
             break
 
         case 'git status':
@@ -704,6 +746,37 @@ function processCommand(command) {
                 break
             }
 
+            // Exclusão de branch com flag -d ou -D (GEG-51)
+            if (parsed.flag === '-d' || parsed.flag === '-D') {
+                if (!parsed.arg) {
+                    printOutput("fatal: branch name required", "error")
+                    printOutput("Dica: informe o nome da branch a ser excluída. Exemplo: git branch -d feature-login", "warning")
+                    break
+                }
+                if (parsed.arg === gitState.currentBranch) {
+                    printOutput(`error: Cannot delete branch '${parsed.arg}' checked out at '/gitquest'`, 'error')
+                    printOutput(`Dica: você não pode deletar a branch na qual está posicionado. Mude para 'main' com "git switch main" antes de deletar.`, 'warning')
+                    break
+                }
+                const bIndex = gitState.branches.indexOf(parsed.arg)
+                if (bIndex === -1) {
+                    printOutput(`error: branch '${parsed.arg}' not found.`, 'error')
+                    break
+                }
+                gitState.branches.splice(bIndex, 1)
+                const commitHash = gitState.commits.length > 0 ? gitState.commits[0].hash.substring(0, 7) : '3f8b91a'
+                printOutput(`Deleted branch ${parsed.arg} (was ${commitHash}).`, 'success')
+                showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}' DELETADA!`, 'LIMPEZA REALIZADA COM SUCESSO')
+
+                // Checagem de objetivo da Fase 10 (Módulo 2 / GEG-51)
+                if (gitState.currentMissionIndex === 9 && !gitState.branchDeleted) {
+                    gitState.branchDeleted = true
+                    gitState.xp += 100
+                    renderMission()
+                }
+                break
+            }
+
             // Se passou o nome (ex: git branch feature-login) ➔ CRIA a nova branch
             if (parsed.arg) {
                 if (gitState.commits.length === 0) {
@@ -766,6 +839,7 @@ function processCommand(command) {
                 gitState.currentBranch = parsed.arg
                 updatePromptAndPipelineBranch()
                 printOutput(`Switched to a new branch '${parsed.arg}'`, 'success')
+                printOutput(`Dica moderna: no Git 2.23+, você também pode usar "git switch -c ${parsed.arg}", separando ramificações de arquivos!`, 'info')
                 showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}'!`, 'NOVA RAMIFICAÇÃO CRIADA')
 
                 // Checagem de objetivo da Fase 6 (GEG-20: Ramificações)
@@ -782,7 +856,7 @@ function processCommand(command) {
             // Checkout comum (alternar para branch existente)
             if (!gitState.branches.includes(parsed.arg)) {
                 printOutput(`error: pathspec '${parsed.arg}' did not match any file(s) known to git`, 'error')
-                printOutput(`Dica: a branch '${parsed.arg}' não existe. Para criá-la e alternar ao mesmo tempo, use: git checkout -b ${parsed.arg}`, 'warning')
+                printOutput(`Dica: a branch '${parsed.arg}' não existe. Para criá-la e alternar ao mesmo tempo, use: git checkout -b ${parsed.arg} ou git switch -c ${parsed.arg}`, 'warning')
             } else if (parsed.arg === gitState.currentBranch) {
                 printOutput(`Already on '${parsed.arg}'`, 'warning')
             } else {
@@ -798,6 +872,152 @@ function processCommand(command) {
                         renderMission()
                     }
                 }
+            }
+            break
+
+        case 'git switch':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                printOutput('Dica: execute "git init" para inicializar o repositório.', 'warning')
+                break
+            }
+
+            if (gitState.commits.length === 0) {
+                printOutput(`fatal: your current branch '${gitState.currentBranch}' does not have any commits yet`, 'error')
+                printOutput('Dica: crie seu primeiro snapshot com "git commit -m \\"...\\"" antes de ramificar com "git switch"!', 'warning')
+                break
+            }
+
+            // Caso 1: Criação e alternância simultânea: git switch -c <nome>
+            if (parsed.flag === '-c') {
+                if (!parsed.arg) {
+                    printOutput("fatal: missing branch name for '-c'", 'error')
+                    printOutput('Dica: especifique o nome da branch após a flag -c. Exemplo: git switch -c feature-auth', 'warning')
+                    break
+                }
+
+                if (gitState.branches.includes(parsed.arg)) {
+                    printOutput(`fatal: a branch named '${parsed.arg}' already exists`, 'error')
+                    printOutput(`Dica: a branch já existe. Para apenas alternar para ela, use: git switch ${parsed.arg}`, 'warning')
+                    break
+                }
+
+                if (parsed.rawFlag === '-b') {
+                    printOutput('(Nota pedagógica: no "git switch", a flag canônica é "-c" de create, enquanto "-b" pertencia ao "git checkout" legado)', 'info')
+                }
+
+                gitState.branches.push(parsed.arg)
+                gitState.currentBranch = parsed.arg
+                updatePromptAndPipelineBranch()
+                printOutput(`Switched to a new branch '${parsed.arg}'`, 'success')
+                showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}'!`, 'NOVA RAMIFICAÇÃO COM GIT SWITCH')
+
+                // Checagem de objetivo da Fase 6 (GEG-20 / GEG-48)
+                if (parsed.arg === 'feature-auth' || gitState.currentMissionIndex === 5) {
+                    if (!gitState.branchCreated) {
+                        gitState.branchCreated = true
+                        gitState.xp += 150
+                        renderMission()
+                    }
+                }
+
+                // Checagem de objetivo da Fase 7 (Módulo 2: git switch -c feature-login)
+                if (gitState.currentMissionIndex === 6 && (parsed.arg === 'feature-login' || !gitState.branchLoginCreated)) {
+                    gitState.branchLoginCreated = true
+                    renderMission()
+                }
+                break
+            }
+
+            // Caso 2: Sem argumento de branch
+            if (!parsed.arg) {
+                printOutput('fatal: missing branch or commit argument', 'error')
+                printOutput('Dica: especifique a branch para a qual deseja alternar. Exemplo: git switch main ou crie com git switch -c feature-auth', 'warning')
+                break
+            }
+
+            // Caso 3: Alternar para branch existente
+            if (!gitState.branches.includes(parsed.arg)) {
+                printOutput(`fatal: invalid reference: ${parsed.arg}`, 'error')
+                printOutput(`Dica: a branch '${parsed.arg}' não existe localmente. Para criá-la e alternar ao mesmo tempo, use: git switch -c ${parsed.arg}`, 'warning')
+            } else if (parsed.arg === gitState.currentBranch) {
+                printOutput(`Already on '${parsed.arg}'`, 'warning')
+            } else {
+                gitState.currentBranch = parsed.arg
+                updatePromptAndPipelineBranch()
+                printOutput(`Switched to branch '${parsed.arg}'`, 'success')
+
+                // Checagem de objetivo da Fase 6 caso alterne para feature-auth
+                if (parsed.arg === 'feature-auth' || gitState.currentMissionIndex === 5) {
+                    if (!gitState.branchCreated) {
+                        gitState.branchCreated = true
+                        gitState.xp += 150
+                        renderMission()
+                    }
+                }
+
+                // Checagem de objetivo da Fase 7 (Módulo 2: retorno para main)
+                if (gitState.currentMissionIndex === 6 && parsed.arg === 'main' && gitState.branchLoginCreated && !gitState.switchedBackToMain) {
+                    gitState.switchedBackToMain = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'COMANDO SWITCH DOMINADO!')
+                }
+
+                // Checagem de objetivo da Fase 8 (Módulo 2: switch para feature-login)
+                if (gitState.currentMissionIndex === 7 && parsed.arg === 'feature-login' && !gitState.onFeatureLogin) {
+                    gitState.onFeatureLogin = true
+                    renderMission()
+                }
+
+                // Checagem de objetivo da Fase 9 (Módulo 2: retorno para main para preparar o merge)
+                if (gitState.currentMissionIndex === 8 && parsed.arg === 'main' && !gitState.switchedToMainForMerge) {
+                    gitState.switchedToMainForMerge = true
+                    renderMission()
+                }
+            }
+            break
+
+        case 'git merge':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                printOutput('Dica: execute "git init" para inicializar o repositório.', 'warning')
+                break
+            }
+
+            if (!parsed.arg) {
+                printOutput('fatal: No commit specified and merge.default unspecified.', 'error')
+                printOutput('Dica: especifique o nome da branch a ser fundida. Exemplo: git merge feature-login', 'warning')
+                break
+            }
+
+            if (!gitState.branches.includes(parsed.arg)) {
+                printOutput(`merge: ${parsed.arg} - not something we can merge`, 'error')
+                printOutput(`Dica: a branch '${parsed.arg}' não existe no repositório local.`, 'warning')
+                break
+            }
+
+            if (parsed.arg === gitState.currentBranch) {
+                printOutput('Already up to date.', 'info')
+                printOutput(`Dica: você já está na branch '${parsed.arg}'. Para fundir alterações, posicione-se na branch de destino (ex: main).`, 'warning')
+                break
+            }
+
+            // Fusão linear Fast-Forward (GEG-49)
+            const oldHash = gitState.commits.length > 1 ? gitState.commits[1].hash.substring(0, 7) : '7a4e12b'
+            const newHash = gitState.commits.length > 0 ? gitState.commits[0].hash.substring(0, 7) : '3f8b91a'
+            printOutput(`Updating ${oldHash}..${newHash}`, 'info')
+            printOutput('Fast-forward', 'warning')
+            printOutput(' login.html | 24 ++++++++++++++++++++++++', 'diff-add')
+            printOutput(' login.css  | 18 ++++++++++++++++++', 'diff-add')
+            printOutput(' 2 files changed, 42 insertions(+)', 'success')
+            showRetroCelebration('FAST-FORWARD!', 'FUSÃO LINEAR REALIZADA COM SUCESSO')
+
+            // Checagem de objetivo da Fase 9 (Módulo 2 / GEG-49)
+            if (gitState.currentMissionIndex === 8 && !gitState.mergeCompleted) {
+                gitState.mergeCompleted = true
+                gitState.xp += 200
+                renderMission()
             }
             break
 
@@ -856,6 +1076,15 @@ function processCommand(command) {
                 gitState.xp += 50
                 renderMission()
                 showRetroCelebration('+50 XP CONQUISTADO!', 'MÚLTIPLOS ARQUIVOS NO STAGING')
+                break
+            }
+
+            // Suporte para Fase 8 (arquivos de feature no Módulo 2)
+            if (gitState.currentMissionIndex === 7) {
+                workingFiles.innerHTML = ''
+                stagingFiles.appendChild(createFileItem('login.html'))
+                stagingFiles.appendChild(createFileItem('login.css'))
+                printOutput('Novos arquivos de login adicionados ao staging area!', 'success')
                 break
             }
 
@@ -931,6 +1160,35 @@ function processCommand(command) {
                 gitState.xp += 50
                 renderMission()
                 showRetroCelebration('+50 XP CONQUISTADO!', 'SEGUNDO SNAPSHOT GRAVADO!')
+                break
+            }
+
+            // Suporte para Fase 8 (commit exclusivo na branch feature)
+            if (gitState.currentMissionIndex === 7) {
+                if (gitState.featureLoginCommitted) {
+                    printOutput('nothing to commit, working tree clean', 'warning')
+                    break
+                }
+                gitState.featureLoginCommitted = true
+                stagingFiles.innerHTML = ''
+                repositoryFiles.appendChild(createFileItem('login.html', gitState.currentBranch))
+                repositoryFiles.appendChild(createFileItem('login.css', gitState.currentBranch))
+
+                const commitHash = Math.random().toString(16).substring(2, 9)
+                gitState.commits.unshift({
+                    hash: commitHash,
+                    branch: gitState.currentBranch,
+                    author: 'Dev Aprendiz <guest@gitquest.dev>',
+                    date: new Date().toUTCString(),
+                    msg: parsed.msg
+                })
+
+                printOutput(`[${gitState.currentBranch} ${commitHash}] ${parsed.msg}`, 'success')
+                printOutput('2 files changed, 42 insertions(+)', 'success')
+
+                gitState.xp += 150
+                renderMission()
+                showRetroCelebration('+150 XP CONQUISTADO!', 'COMMIT NA FEATURE REGISTRADO!')
                 break
             }
 
