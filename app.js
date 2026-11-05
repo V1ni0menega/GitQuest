@@ -72,6 +72,30 @@ const gitState = {
     switchedToMainForMerge: false,// Fase 9: git switch main
     mergeCompleted: false,       // Fase 9: git merge feature-login
     branchDeleted: false,        // Fase 10: git branch -d feature-login
+    // ─── Módulo 3: Desfazendo Coisas & Viagem no Tempo ───
+    fileRestored: false,         // Fase 11: git restore app.js (GEG-53)
+    fileUnstaged: false,         // Fase 12: git restore --staged app.js (GEG-54)
+    commitAmended: false,        // Fase 13: git commit --amend (GEG-55)
+    commitReverted: false,       // Fase 14: git revert HEAD (GEG-56)
+    // ─── Módulo 4: Resolução de Conflitos ───
+    inConflict: false,           // Estado atual de merge conflict
+    conflictDetected: false,     // Fase 15: git merge feature-conflito (GEG-57)
+    conflictStaged: false,       // Fase 16: git add app.js (GEG-58)
+    conflictResolved: false,     // Fase 16: git commit (GEG-58)
+    mergeAborted: false,         // Fase 17: git merge --abort (GEG-59)
+    // ─── Módulo 5: Colaboração & Remoto ───
+    remotes: {},                 // Registros remotos { origin: { name, url } }
+    remoteAdded: false,          // Fase 18: git remote add origin (GEG-60)
+    remoteViewed: false,         // Fase 18: git remote -v (GEG-60)
+    pushedToRemote: false,       // Fase 19: git push -u origin main (GEG-61)
+    fetchedRemote: false,        // Fase 20: git fetch (GEG-62)
+    pulledRemote: false,         // Fase 20: git pull (GEG-62)
+    // ─── Módulo 6: Power Tools ───
+    stashStack: [],              // Pilha de stashes temporários
+    stashSaved: false,           // Fase 21: git stash (GEG-63)
+    stashListed: false,          // Fase 22: git stash list (GEG-64)
+    stashPopped: false,          // Fase 22: git stash pop (GEG-64)
+    blameChecked: false,         // Fase 23: git blame app.js (GEG-65)
     workingFiles: [],
     stagedFiles: [],
     branches: ['main'],
@@ -107,90 +131,126 @@ function parserCommand(command) {
         return { base: 'help', arg: '', msg: '' }
     }
 
-    // 1. Caso com flag -m (ex: git commit -m "msg")
+    // 1. Extrai mensagem com flag -m se presente (ex: git commit -m "msg" ou git commit --amend -m "msg")
+    let cleanMsg = ''
+    let withoutMsg = trimmed
     if (trimmed.includes('-m')) {
         const mIndex = trimmed.indexOf('-m')
-        const basePart = trimmed.slice(0, mIndex).trim()
-        let cleanMsg = trimmed.slice(mIndex + 2).trim()
-        // Remove aspas duplas ou simples envolventes da mensagem
+        cleanMsg = trimmed.slice(mIndex + 2).trim()
+        withoutMsg = trimmed.slice(0, mIndex).trim()
         if ((cleanMsg.startsWith('"') && cleanMsg.endsWith('"')) || (cleanMsg.startsWith("'") && cleanMsg.endsWith("'"))) {
             cleanMsg = cleanMsg.slice(1, -1).trim()
         }
-        return {
-            base: basePart,
-            arg: '',
-            flag: '-m',
-            msg: cleanMsg
-        }
     }
 
-    // 2. Comandos com subargumentos e flags (ex: git checkout -b feature, git switch -c feature, git branch feature ou git add .)
-    const words = trimmed.split(/\s+/)
-    if (words[0] === 'git' && words.length > 2) {
-        // Caso especial: git checkout -b <nome>
-        if (words[1] === 'checkout' && words[2] === '-b') {
-            return {
-                base: 'git checkout',
-                arg: words.length > 3 ? words[3] : '',
-                flag: '-b',
-                rawFlag: '-b',
-                msg: ''
+    const words = withoutMsg.split(/\s+/).filter(Boolean)
+    if (words[0] === 'git') {
+        const sub = words[1] || ''
+
+        // git checkout [-b <nome>]
+        if (sub === 'checkout') {
+            if (words[2] === '-b') {
+                return { base: 'git checkout', arg: words[3] || '', flag: '-b', rawFlag: '-b', msg: cleanMsg }
             }
+            return { base: 'git checkout', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
         }
 
-        // Caso especial: git switch -c <nome> (ou flags equivalentes -C, -b, --create)
-        if (words[1] === 'switch' && (words[2] === '-c' || words[2] === '-C' || words[2] === '-b' || words[2] === '--create')) {
-            return {
-                base: 'git switch',
-                arg: words.length > 3 ? words[3] : '',
-                flag: '-c',
-                rawFlag: words[2],
-                msg: ''
+        // git switch [-c <nome>]
+        if (sub === 'switch') {
+            if (words[2] === '-c' || words[2] === '-C' || words[2] === '-b' || words[2] === '--create') {
+                return { base: 'git switch', arg: words[3] || '', flag: '-c', rawFlag: words[2], msg: cleanMsg }
             }
+            return { base: 'git switch', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
         }
 
-        // Caso especial: git branch -d <nome> ou git branch -D <nome> (GEG-51)
-        if (words[1] === 'branch' && (words[2] === '-d' || words[2] === '-D')) {
-            return {
-                base: 'git branch',
-                arg: words.length > 3 ? words[3] : '',
-                flag: words[2],
-                rawFlag: words[2],
-                msg: ''
+        // git branch [-d <nome>]
+        if (sub === 'branch') {
+            if (words[2] === '-d' || words[2] === '-D') {
+                return { base: 'git branch', arg: words[3] || '', flag: words[2], rawFlag: words[2], msg: cleanMsg }
             }
+            return { base: 'git branch', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
         }
 
-        // Caso especial: git merge [--no-ff] <nome> (GEG-49 / GEG-50)
-        if (words[1] === 'merge') {
+        // git merge [--abort | --no-ff <nome> | <nome>]
+        if (sub === 'merge') {
+            if (words.includes('--abort')) {
+                return { base: 'git merge', arg: '', flag: '--abort', rawFlag: '--abort', msg: cleanMsg }
+            }
             const hasNoFf = words.includes('--no-ff')
             const branchName = words.find((w, i) => i > 1 && !w.startsWith('-')) || ''
-            return {
-                base: 'git merge',
-                arg: branchName,
-                flag: hasNoFf ? '--no-ff' : '',
-                rawFlag: hasNoFf ? '--no-ff' : '',
-                msg: ''
-            }
+            return { base: 'git merge', arg: branchName, flag: hasNoFf ? '--no-ff' : '', rawFlag: hasNoFf ? '--no-ff' : '', msg: cleanMsg }
         }
 
-        const subCommand = words[1]
-        if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'switch' || subCommand === 'merge' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status' || subCommand === 'diff') {
-            return {
-                base: 'git ' + subCommand,
-                arg: words.slice(2).join(' '),
-                flag: '',
-                rawFlag: '',
-                msg: ''
+        // git restore [--staged <arquivo> | <arquivo>]
+        if (sub === 'restore') {
+            const isStaged = words.includes('--staged') || words.includes('-S')
+            const fileName = words.find((w, i) => i > 1 && !w.startsWith('-')) || 'app.js'
+            return { base: 'git restore', arg: fileName, flag: isStaged ? '--staged' : '', rawFlag: isStaged ? '--staged' : '', msg: cleanMsg }
+        }
+
+        // git commit [--amend]
+        if (sub === 'commit') {
+            const isAmend = words.includes('--amend')
+            return { base: 'git commit', arg: '', flag: isAmend ? '--amend' : (cleanMsg ? '-m' : ''), rawFlag: isAmend ? '--amend' : '', msg: cleanMsg }
+        }
+
+        // git revert <hash|HEAD>
+        if (sub === 'revert') {
+            const target = words.slice(2).join(' ') || 'HEAD'
+            return { base: 'git revert', arg: target, flag: '', rawFlag: '', msg: cleanMsg }
+        }
+
+        // git remote [add <nome> <url> | -v]
+        if (sub === 'remote') {
+            if (words[2] === 'add') {
+                return { base: 'git remote', arg: words.slice(3).join(' '), flag: 'add', rawFlag: 'add', msg: cleanMsg }
             }
+            if (words.includes('-v') || words.includes('--verbose')) {
+                return { base: 'git remote', arg: '', flag: '-v', rawFlag: '-v', msg: cleanMsg }
+            }
+            return { base: 'git remote', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
+        }
+
+        // git push [-u origin main]
+        if (sub === 'push') {
+            const hasU = words.includes('-u') || words.includes('--set-upstream')
+            const rest = words.filter((w, i) => i > 1 && !w.startsWith('-')).join(' ')
+            return { base: 'git push', arg: rest, flag: hasU ? '-u' : '', rawFlag: hasU ? '-u' : '', msg: cleanMsg }
+        }
+
+        // git fetch
+        if (sub === 'fetch') {
+            return { base: 'git fetch', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
+        }
+
+        // git pull
+        if (sub === 'pull') {
+            return { base: 'git pull', arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
+        }
+
+        // git stash [list | pop | save]
+        if (sub === 'stash') {
+            const action = words[2] || ''
+            return { base: 'git stash', arg: action, flag: action, rawFlag: action, msg: cleanMsg }
+        }
+
+        // git blame <arquivo>
+        if (sub === 'blame') {
+            return { base: 'git blame', arg: words.slice(2).join(' ') || 'app.js', flag: '', rawFlag: '', msg: cleanMsg }
+        }
+
+        // Comandos padrão: git status, git log, git add, git diff, git init
+        if (['init', 'add', 'status', 'diff', 'log'].includes(sub)) {
+            return { base: 'git ' + sub, arg: words.slice(2).join(' '), flag: '', rawFlag: '', msg: cleanMsg }
         }
     }
 
-    // 3. Comandos normais (ex: git init, git add, git branch, git commit, git status)
+    // 3. Comandos normais ou desconhecidos
     return {
         base: trimmed,
         arg: '',
         flag: '',
-        msg: ''
+        msg: cleanMsg
     }
 }
 
@@ -334,14 +394,16 @@ function renderDiffOutput(arg = '') {
 function updatePromptAndPipelineBranch() {
     if (promptLabel) {
         if (gitState.initialized) {
-            promptLabel.innerHTML = `guest@gitquest <span class="prompt-branch">(${gitState.currentBranch})</span>:~$ `
+            const conflictTag = gitState.inConflict ? '|MERGING' : ''
+            promptLabel.innerHTML = `guest@gitquest <span class="prompt-branch">(${gitState.currentBranch}${conflictTag})</span>:~$ `
         } else {
             promptLabel.textContent = 'guest@gitquest:~$ '
         }
     }
     if (pipelineBranchBadge) {
-        pipelineBranchBadge.textContent = `HEAD ➔ ${gitState.currentBranch}`
-        pipelineBranchBadge.style.borderColor = 'var(--accent-color)'
+        const conflictTag = gitState.inConflict ? ' (MERGING)' : ''
+        pipelineBranchBadge.textContent = `HEAD ➔ ${gitState.currentBranch}${conflictTag}`
+        pipelineBranchBadge.style.borderColor = gitState.inConflict ? '#ef4444' : 'var(--accent-color)'
         setTimeout(() => {
             pipelineBranchBadge.style.borderColor = 'var(--accent-terminal)'
         }, 350)
@@ -362,6 +424,9 @@ function advanceToNextMission() {
 
     if (gitState.currentMissionIndex < missions.length - 1) {
         gitState.currentMissionIndex++
+        if (gitState.currentMissionIndex === 16) {
+            gitState.inConflict = true
+        }
         renderMission()
         if (promptInput) {
             promptInput.value = ''
@@ -550,7 +615,7 @@ function handlePedagogicalError(command, parsed) {
     const current = missions[gitState.currentMissionIndex]
 
     // 1. Digitou sem o prefixo "git" (ex: init, add ., commit -m "...")
-    const gitCommands = ['init', 'add', 'commit', 'status', 'branch', 'checkout', 'log', 'diff', 'push', 'pull', 'clone', 'merge']
+    const gitCommands = ['init', 'add', 'commit', 'status', 'branch', 'checkout', 'log', 'diff', 'push', 'pull', 'clone', 'merge', 'switch', 'restore', 'revert', 'remote', 'stash', 'blame']
     if (gitCommands.includes(firstWord)) {
         printOutput(`Comando '${words[0]}' não encontrado no ambiente.`, 'error')
         printOutput(`Dica: no Git, todos os comandos devem começar com 'git'. Tente executar: git ${trimmed}`, 'warning')
@@ -597,20 +662,21 @@ function handlePedagogicalError(command, parsed) {
             'sw': 'switch',
             'merg': 'merge',
             'megre': 'merge',
-            'mrg': 'merge'
+            'mrg': 'merge',
+            'restor': 'restore',
+            'restroe': 'restore',
+            'reverti': 'revert',
+            'remot': 'remote',
+            'pus': 'push',
+            'pul': 'pull',
+            'stsh': 'stash',
+            'blam': 'blame'
         }
 
         if (typoMap[sub]) {
             const suggestion = `git ${typoMap[sub]}${words.length > 2 ? ' ' + words.slice(2).join(' ') : ''}`
             printOutput(`git: '${sub}' não é um comando git válido.`, 'error')
             printOutput(`Dica: você quis dizer '${suggestion}'?`, 'warning')
-            return
-        }
-
-        // Subcomandos remotos ainda não ativos nesta trilha local
-        if (sub === 'push' || sub === 'pull' || sub === 'clone' || sub === 'remote') {
-            printOutput(`git: '${sub}' opera com repositórios remotos.`, 'warning')
-            printOutput(`Dica: nesta trilha estamos aprendendo os comandos locais (init, add, commit, branch).`, 'info')
             return
         }
     }
@@ -636,13 +702,24 @@ function processCommand(command) {
             break
 
         case 'help':
-            printOutput('Comandos disponíveis: git init, git add ., git commit -m "...", git status, git diff, git diff --staged, git log, git branch, git branch <nome>, git branch -d <nome>, git checkout <nome>, git checkout -b <nome>, git switch <nome>, git switch -c <nome>, git merge <nome>, clear', 'info')
+            printOutput('Comandos disponíveis: git init, git add, git commit, git status, git diff, git log, git branch, git checkout, git switch, git merge, git restore, git revert, git remote, git push, git fetch, git pull, git stash, git blame, clear', 'info')
             break
 
         case 'git status':
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
                 printOutput('Dica: você precisa inicializar o repositório com "git init" antes de checar o status.', 'warning')
+                break
+            }
+
+            if (gitState.inConflict) {
+                printOutput(`On branch ${gitState.currentBranch}`, 'info')
+                printOutput('You have unmerged paths.', 'warning')
+                printOutput('  (fix conflicts and run "git commit")', 'info')
+                printOutput('  (use "git merge --abort" to abort the merge)', 'info')
+                printOutput('Unmerged paths:', 'error')
+                printOutput('  (use "git add <file>..." to mark resolution)', 'info')
+                printOutput('	both modified:   app.js', 'error')
                 break
             }
 
@@ -1001,9 +1078,50 @@ function processCommand(command) {
                 break
             }
 
+            // Abortar merge em estado de conflito (GEG-59)
+            if (parsed.flag === '--abort') {
+                if (!gitState.inConflict && gitState.currentMissionIndex !== 16) {
+                    printOutput('fatal: There is no merge to abort (MERGE_HEAD missing).', 'error')
+                    printOutput('Dica: "git merge --abort" só pode ser utilizado quando houver uma fusão interrompida por conflitos.', 'warning')
+                    break
+                }
+                gitState.inConflict = false
+                updatePromptAndPipelineBranch()
+                printOutput('Merge abortado com sucesso. Working tree e HEAD restaurados ao estado anterior.', 'info')
+                if (gitState.currentMissionIndex === 16 && !gitState.mergeAborted) {
+                    gitState.mergeAborted = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'FUSÃO EM CONFLITO ABORTADA COM GIT MERGE --ABORT!')
+                }
+                break
+            }
+
             if (!parsed.arg) {
                 printOutput('fatal: No commit specified and merge.default unspecified.', 'error')
                 printOutput('Dica: especifique o nome da branch a ser fundida. Exemplo: git merge feature-login', 'warning')
+                break
+            }
+
+            // Detecção e simulação de conflito de merge (GEG-57 / Fase 15)
+            if (parsed.arg === 'feature-conflito' || gitState.currentMissionIndex === 14) {
+                gitState.inConflict = true
+                updatePromptAndPipelineBranch()
+                printOutput('Auto-merging app.js', 'info')
+                printOutput('CONFLICT (content): Merge conflict in app.js', 'error')
+                printOutput('Automatic merge failed; fix conflicts and then commit the result.', 'warning')
+                printOutput('<<<<<<< HEAD', 'diff-remove')
+                printOutput('const API_URL = "https://api.gitquest.dev/v1";', 'diff-remove')
+                printOutput('=======', 'info')
+                printOutput('const API_URL = "https://api.gitquest.com/v2";', 'diff-add')
+                printOutput('>>>>>>> feature-conflito', 'diff-add')
+
+                if (gitState.currentMissionIndex === 14 && !gitState.conflictDetected) {
+                    gitState.conflictDetected = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'CONFLITO DE MERGE DETECTADO!')
+                }
                 break
             }
 
@@ -1098,7 +1216,30 @@ function processCommand(command) {
                 break
             }
 
-            if (parsed.arg !== '.' && parsed.arg !== '-A' && parsed.arg !== '--all') {
+            // Resolução de conflito no staging (GEG-58 / Fase 16)
+            if (gitState.inConflict) {
+                if (parsed.arg === 'app.js' || parsed.arg === '.' || parsed.arg === '-A' || parsed.arg === '--all') {
+                    gitState.conflictStaged = true
+                    printOutput('Conflito em app.js marcado como resolvido no staging!', 'success')
+                    printOutput('Dica: agora finalize a fusão criando o snapshot com "git commit" ou "git commit -m \\"...\\"".', 'info')
+                    if (gitState.currentMissionIndex === 15) {
+                        renderMission()
+                        showRetroCelebration('CONFLITO MARCADO RESOLVIDO!', 'ARQUIVO PRONTO PARA O COMMIT FINAL')
+                    }
+                    break
+                }
+            }
+
+            // Suporte para preparação da Fase 12 (git restore --staged)
+            if (gitState.currentMissionIndex === 11) {
+                stagingFiles.appendChild(createFileItem('app.js'))
+                printOutput('Arquivo \'app.js\' adicionado ao staging area!', 'success')
+                printOutput('Dica: agora retire-o do staging com "git restore --staged app.js".', 'info')
+                break
+            }
+
+            const validArgs = ['.', '-A', '--all', 'app.js', 'index.html', 'style.css', 'components.js', 'README.md', 'login.html', 'login.css']
+            if (!validArgs.includes(parsed.arg)) {
                 printOutput(`fatal: pathspec '${parsed.arg}' did not match any files (use "git add ." para adicionar todos os arquivos)`, 'error')
                 printOutput('Dica: nesta missão, utilize a notação de ponto: "git add ." para rastrear todos os arquivos.', 'warning')
                 break
@@ -1157,6 +1298,62 @@ function processCommand(command) {
             if (!gitState.initialized) {
                 printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
                 printOutput('Dica: inicialize o repositório com "git init" antes de tentar commitar.', 'warning')
+                break
+            }
+
+            // Suporte para retificação do último commit com --amend (GEG-55 / Fase 13)
+            if (parsed.flag === '--amend') {
+                if (gitState.commits.length === 0) {
+                    printOutput('fatal: You have nothing to amend.', 'error')
+                    printOutput('Dica: "git commit --amend" altera o commit anterior, mas ainda não há commits no repositório.', 'warning')
+                    break
+                }
+                const amendedHash = Math.random().toString(16).substring(2, 9)
+                const newMsg = parsed.msg || `${gitState.commits[0].msg} (amended)`
+                gitState.commits[0].hash = amendedHash
+                gitState.commits[0].msg = newMsg
+                gitState.commits[0].date = new Date().toUTCString()
+
+                printOutput(`[${gitState.currentBranch} ${amendedHash}] ${newMsg}`, 'success')
+                printOutput(' Date: ' + gitState.commits[0].date, 'info')
+                printOutput(' 1 file changed, 10 insertions(+), 2 deletions(-)', 'info')
+
+                if (gitState.currentMissionIndex === 12 && !gitState.commitAmended) {
+                    gitState.commitAmended = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'ÚLTIMO COMMIT CORRIGIDO COM AMEND!')
+                }
+                break
+            }
+
+            // Finalização de resolução de conflito de merge (GEG-58 / Fase 16)
+            if (gitState.inConflict) {
+                if (!gitState.conflictStaged) {
+                    printOutput('error: Committing is not possible because you have unmerged files.', 'error')
+                    printOutput('hint: Fix them up in the work tree, and then use \'git add/rm <file>\'', 'warning')
+                    printOutput('hint: as appropriate to mark resolution and make a commit.', 'warning')
+                    printOutput('fatal: Exiting because of an unresolved conflict.', 'error')
+                    break
+                }
+                gitState.inConflict = false
+                gitState.conflictResolved = true
+                const mergeHash = Math.random().toString(16).substring(2, 9)
+                const msg = parsed.msg || "Merge branch 'feature-conflito' (resolvendo conflitos)"
+                gitState.commits.unshift({
+                    hash: mergeHash,
+                    branch: gitState.currentBranch,
+                    author: 'Dev Aprendiz <guest@gitquest.dev>',
+                    date: new Date().toUTCString(),
+                    msg: msg,
+                    mergeParents: ['7a4e12b', '3f8b91a']
+                })
+                updatePromptAndPipelineBranch()
+                printOutput(`[${gitState.currentBranch} ${mergeHash}] ${msg}`, 'success')
+                printOutput('Merge commit gerado com sucesso. Conflito resolvido!', 'success')
+                gitState.xp += 200
+                renderMission()
+                showRetroCelebration('+200 XP CONQUISTADO!', 'CONFLITO RESOLVIDO E FUSÃO CONCLUÍDA!')
                 break
             }
 
@@ -1272,6 +1469,271 @@ function processCommand(command) {
             renderMission()
             showRetroCelebration('+100 XP CONQUISTADO!', 'PRIMEIRO COMMIT GRAVADO!')
             break
+
+        case 'git restore':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                printOutput('Dica: inicialize o repositório com "git init" antes de restaurar arquivos.', 'warning')
+                break
+            }
+
+            // Desindexação do staging com flag --staged (GEG-54 / Fase 12)
+            if (parsed.flag === '--staged') {
+                const targetFile = parsed.arg || 'app.js'
+                stagingFiles.innerHTML = ''
+                workingFiles.appendChild(createFileItem(targetFile))
+                printOutput(`Unstaged changes after reset:`, 'info')
+                printOutput(`M\t${targetFile}`, 'warning')
+                printOutput(`Dica: o arquivo '${targetFile}' foi retirado do Staging Area e voltou para o Working Directory.`, 'info')
+
+                if (gitState.currentMissionIndex === 11 && !gitState.fileUnstaged) {
+                    gitState.fileUnstaged = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'ARQUIVO RETIRADO DO STAGING COM RESTORE --STAGED!')
+                }
+                break
+            }
+
+            // Descarte no Working Directory (GEG-53 / Fase 11)
+            const targetRestore = parsed.arg || 'app.js'
+            workingFiles.innerHTML = ''
+            printOutput(`Descartadas alterações não salvas em '${targetRestore}'.`, 'success')
+            printOutput(`Arquivo '${targetRestore}' restaurado para o estado limpo do último commit (HEAD).`, 'info')
+
+            if (gitState.currentMissionIndex === 10 && !gitState.fileRestored) {
+                gitState.fileRestored = true
+                gitState.xp += 100
+                renderMission()
+                showRetroCelebration('+100 XP CONQUISTADO!', 'WORKING DIRECTORY RESTAURADO COM GIT RESTORE!')
+            }
+            break
+
+        case 'git revert':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            if (gitState.commits.length === 0) {
+                printOutput('fatal: your current branch does not have any commits to revert', 'error')
+                printOutput('Dica: você precisa ter commits registrados antes de usar "git revert".', 'warning')
+                break
+            }
+
+            const targetCommit = gitState.commits[0]
+            const revertHash = Math.random().toString(16).substring(2, 9)
+            const revertMsg = `Revert "${targetCommit ? targetCommit.msg : 'alteração experimental'}"`
+            gitState.commits.unshift({
+                hash: revertHash,
+                branch: gitState.currentBranch,
+                author: 'Dev Aprendiz <guest@gitquest.dev>',
+                date: new Date().toUTCString(),
+                msg: revertMsg
+            })
+
+            printOutput(`[${gitState.currentBranch} ${revertHash}] ${revertMsg}`, 'success')
+            printOutput(' 1 file changed, 2 insertions(+), 8 deletions(-)', 'info')
+            printOutput('Contra-commit seguro criado com sucesso na ponta da branch.', 'info')
+
+            if (gitState.currentMissionIndex === 13 && !gitState.commitReverted) {
+                gitState.commitReverted = true
+                gitState.xp += 150
+                renderMission()
+                showRetroCelebration('+150 XP CONQUISTADO!', 'CONTRA-COMMIT CRIADO COM GIT REVERT!')
+            }
+            break
+
+        case 'git remote':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            // Adicionar remoto: git remote add <nome> <url> (GEG-60 / Fase 18)
+            if (parsed.flag === 'add') {
+                const parts = (parsed.arg || '').split(/\s+/).filter(Boolean)
+                const name = parts[0] || 'origin'
+                const url = parts[1] || 'https://github.com/usuario/gitquest.git'
+                gitState.remotes[name] = { name, url }
+                printOutput(`Remoto '${name}' conectado com sucesso apontando para: ${url}`, 'success')
+
+                if (gitState.currentMissionIndex === 17 && !gitState.remoteAdded) {
+                    gitState.remoteAdded = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'REPOSITÓRIO REMOTO CONECTADO!')
+                }
+                break
+            }
+
+            // Inspecionar remotos: git remote -v (GEG-60 / Fase 18)
+            if (parsed.flag === '-v') {
+                if (Object.keys(gitState.remotes).length === 0) {
+                    gitState.remotes['origin'] = { name: 'origin', url: 'https://github.com/usuario/gitquest.git' }
+                }
+                Object.entries(gitState.remotes).forEach(([name, r]) => {
+                    printOutput(`${name}\t${r.url} (fetch)`, 'info')
+                    printOutput(`${name}\t${r.url} (push)`, 'info')
+                })
+
+                if (gitState.currentMissionIndex === 17 && !gitState.remoteViewed) {
+                    gitState.remoteViewed = true
+                    gitState.xp += 100
+                    renderMission()
+                    showRetroCelebration('+100 XP CONQUISTADO!', 'REMOTOS INSPECIONADOS COM SUCESSO!')
+                }
+                break
+            }
+
+            // Listar nomes dos remotos
+            if (Object.keys(gitState.remotes).length === 0) {
+                printOutput('origin', 'info')
+            } else {
+                Object.keys(gitState.remotes).forEach(name => printOutput(name, 'info'))
+            }
+            break
+
+        case 'git push':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            printOutput('Enumerating objects: 15, done.', 'info')
+            printOutput('Counting objects: 100% (15/15), done.', 'info')
+            printOutput('Delta compression using up to 8 threads', 'info')
+            printOutput('Compressing objects: 100% (12/12), done.', 'info')
+            printOutput('Writing objects: 100% (15/15), 1.84 KiB | 1.84 MiB/s, done.', 'info')
+            printOutput('Total 15 (delta 4), reused 0 (delta 0)', 'info')
+            printOutput('To https://github.com/usuario/gitquest.git', 'info')
+            printOutput(' * [new branch]      main -> main', 'success')
+            printOutput('Branch \'main\' set up to track remote branch \'main\' from \'origin\'.', 'success')
+
+            if (gitState.currentMissionIndex === 18 && !gitState.pushedToRemote) {
+                gitState.pushedToRemote = true
+                gitState.xp += 150
+                renderMission()
+                showRetroCelebration('+150 XP CONQUISTADO!', 'COMMITS ENVIADOS VIA GIT PUSH!')
+            }
+            break
+
+        case 'git fetch':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            printOutput('From https://github.com/usuario/gitquest.git', 'info')
+            printOutput(' * [new branch]      origin/main -> origin/main', 'success')
+            printOutput(' * [new branch]      origin/feature-api -> origin/feature-api', 'success')
+            printOutput('Referências remotas baixadas com sucesso.', 'info')
+
+            if (gitState.currentMissionIndex === 19 && !gitState.fetchedRemote) {
+                gitState.fetchedRemote = true
+                gitState.xp += 100
+                renderMission()
+                showRetroCelebration('+100 XP CONQUISTADO!', 'REFERÊNCIAS BAIXADAS COM GIT FETCH!')
+            }
+            break
+
+        case 'git pull':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            printOutput('Updating 7a4e12b..3f8b91a', 'info')
+            printOutput('Fast-forward', 'warning')
+            printOutput(' api-client.js | 38 ++++++++++++++++++++++++++++++++++++++', 'diff-add')
+            printOutput(' 1 file changed, 38 insertions(+)', 'success')
+            printOutput('Repositório local sincronizado e atualizado com upstream!', 'success')
+
+            if (gitState.currentMissionIndex === 19 && !gitState.pulledRemote) {
+                gitState.pulledRemote = true
+                gitState.xp += 150
+                renderMission()
+                showRetroCelebration('+150 XP CONQUISTADO!', 'REPOSITÓRIO LOCAL ATUALIZADO COM GIT PULL!')
+            }
+            break
+
+        case 'git stash':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            // Listar stashes: git stash list (GEG-64 / Fase 22)
+            if (parsed.arg === 'list') {
+                if (gitState.stashStack.length === 0) {
+                    gitState.stashStack.push({ id: 'stash@{0}', msg: `WIP on ${gitState.currentBranch}: 3f8b91a feat: protótipo preliminar` })
+                }
+                gitState.stashStack.forEach(s => {
+                    printOutput(`${s.id}: ${s.msg}`, 'info')
+                })
+
+                if (gitState.currentMissionIndex === 21 && !gitState.stashListed) {
+                    gitState.stashListed = true
+                    renderMission()
+                }
+                break
+            }
+
+            // Recuperar stash: git stash pop (GEG-64 / Fase 22)
+            if (parsed.arg === 'pop') {
+                printOutput(`On branch ${gitState.currentBranch}`, 'info')
+                printOutput('Changes not staged for commit:', 'warning')
+                printOutput('  (use "git add <file>..." to update what will be committed)', 'info')
+                printOutput('  (use "git restore <file>..." to discard changes in working directory)', 'info')
+                printOutput('	modified:   app.js', 'diff-remove')
+                printOutput('Dropped refs/stash@{0} (a5f3e9c12b87)', 'success')
+                gitState.stashStack.shift()
+
+                if (gitState.currentMissionIndex === 21 && !gitState.stashPopped) {
+                    gitState.stashPopped = true
+                    gitState.xp += 150
+                    renderMission()
+                    showRetroCelebration('+150 XP CONQUISTADO!', 'TRABALHO RECUPERADO COM GIT STASH POP!')
+                }
+                break
+            }
+
+            // Guardar na gaveta: git stash (GEG-63 / Fase 21)
+            gitState.stashStack.unshift({
+                id: `stash@{${gitState.stashStack.length}}`,
+                msg: `WIP on ${gitState.currentBranch}: 3f8b91a feat: trabalho temporário em andamento`
+            })
+            workingFiles.innerHTML = ''
+            printOutput(`Saved working directory and index state WIP on ${gitState.currentBranch}: 3f8b91a feat: trabalho temporário em andamento`, 'success')
+            printOutput('Working tree limpa.', 'info')
+
+            if (gitState.currentMissionIndex === 20 && !gitState.stashSaved) {
+                gitState.stashSaved = true
+                gitState.xp += 100
+                renderMission()
+                showRetroCelebration('+100 XP CONQUISTADO!', 'ALTERAÇÕES GUARDADAS NO STASH!')
+            }
+            break
+
+        case 'git blame':
+            if (!gitState.initialized) {
+                printOutput('fatal: not a git repository (or any of the parent directories): .git', 'error')
+                break
+            }
+
+            const blameTarget = parsed.arg || 'app.js'
+            printOutput(`7a4e12b (Dev Aprendiz 2026-11-01 10:14:02 -0300 1) import { missions } from './missions-data.js'`, 'info')
+            printOutput(`3f8b91a (Dev Senior   2026-11-02 14:22:15 -0300 2) const gitState = { initialized: false }`, 'warning')
+            printOutput(`9d2c10e (Dev Aprendiz 2026-11-03 16:05:40 -0300 3) function processCommand(cmd) { ... }`, 'info')
+            printOutput(`8c2d14f (Dev TechLead 2026-11-05 18:30:11 -0300 4) export function verifyPipeline() { ... }`, 'success')
+
+            if (gitState.currentMissionIndex === 22 && !gitState.blameChecked) {
+                gitState.blameChecked = true
+                gitState.xp += 200
+                renderMission()
+                showRetroCelebration('+200 XP CONQUISTADO!', 'AUTORIA AUDITADA LINHA A LINHA COM GIT BLAME!')
+            }
+            break
         default:
             handlePedagogicalError(command, parsed)
             break
@@ -1342,13 +1804,13 @@ initModalEvents({
     onSelectMission: (index) => {
         if (index <= gitState.currentMissionIndex) {
             gitState.currentMissionIndex = index
+            if (index === 16) {
+                gitState.inConflict = true
+            }
             renderMission()
             closeMissionsModal()
             printOutput(`Navegando para ${missions[index].title}!`)
         }
-    },
-    onTabWarning: (tabName) => {
-        printOutput(`Módulo "${tabName}" será liberado nas próximas atualizações!`, 'warning')
     }
 })
 

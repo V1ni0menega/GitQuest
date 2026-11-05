@@ -9,13 +9,28 @@ const openMissionsBtn     = document.getElementById('open-missions-btn')
 const missionTitleTrigger = document.getElementById('mission-title-trigger')
 const closeModalBtn       = document.getElementById('close-modal-btn')
 const closeModalDot       = document.getElementById('close-modal-dot')
-const module1Section      = document.getElementById('module-1-section')
-const module2Section      = document.getElementById('module-2-section')
-const module1LevelButtons = document.querySelectorAll('#module-1-levels .level-btn')
-const module2LevelButtons = document.querySelectorAll('#module-2-levels .level-btn')
-const moduleStepDesc      = document.getElementById('module-step-desc')
-const module2StepDesc     = document.getElementById('module-2-step-desc')
-const tabButtons          = document.querySelectorAll('.modal-tabs .tab-btn')
+
+const moduleSections = {
+    fundamentos: document.getElementById('module-1-section'),
+    branches:    document.getElementById('module-2-section'),
+    desfazer:    document.getElementById('module-3-section'),
+    conflitos:   document.getElementById('module-4-section'),
+    remoto:      document.getElementById('module-5-section'),
+    historico:   document.getElementById('module-6-section')
+}
+
+const tabButtons = document.querySelectorAll('.modal-tabs .tab-btn')
+const allLevelButtons = document.querySelectorAll('.module-section .level-btn')
+
+// Descrições de passo de cada módulo
+const stepDescs = {
+    1: document.getElementById('module-step-desc'),
+    2: document.getElementById('module-2-step-desc'),
+    3: document.getElementById('module-3-step-desc'),
+    4: document.getElementById('module-4-step-desc'),
+    5: document.getElementById('module-5-step-desc'),
+    6: document.getElementById('module-6-step-desc')
+}
 
 // Seletores das Estatísticas Globais & Stepper do Navbar
 const globalXpElement     = document.getElementById('global-xp')
@@ -23,7 +38,17 @@ const globalStarsElement  = document.getElementById('global-stars')
 const navPhasesBar        = document.getElementById('nav-phases-bar')
 const navStepButtons      = document.querySelectorAll('#nav-stepper .step-item')
 
-// Abre a janela modal e sincroniza os dados
+// Determina qual aba corresponde ao índice de missão
+function getTabForMission(index) {
+    if (index < 6) return 'fundamentos'
+    if (index < 10) return 'branches'
+    if (index < 14) return 'desfazer'
+    if (index < 17) return 'conflitos'
+    if (index < 20) return 'remoto'
+    return 'historico'
+}
+
+// Abre a janela modal e sincroniza a aba com a missão atual
 export function openMissionsModal() {
     if (!missionsModal) return
     missionsModal.classList.remove('hidden')
@@ -33,6 +58,20 @@ export function openMissionsModal() {
 export function closeMissionsModal() {
     if (!missionsModal) return
     missionsModal.classList.add('hidden')
+}
+
+/**
+ * Ativa visualmente a aba selecionada e exibe o módulo correspondente
+ */
+export function setActiveTab(tabKey) {
+    tabButtons.forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tabKey)
+    })
+    Object.entries(moduleSections).forEach(([key, section]) => {
+        if (section) {
+            section.style.display = (key === tabKey) ? 'flex' : 'none'
+        }
+    })
 }
 
 /**
@@ -54,7 +93,7 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
         navPhasesBar.style.width = `${percent}%`
     }
 
-    // 3. Atualiza Stepper da Navbar Principal
+    // 3. Atualiza Stepper da Navbar Principal (6 fases essenciais do Módulo 1)
     navStepButtons.forEach((btn, index) => {
         btn.classList.remove('completed', 'active', 'locked')
         const circle = btn.querySelector('.step-circle')
@@ -76,27 +115,11 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
         }
     })
 
-    // 4. Atualiza Botões de Nível do Módulo 1 (Fundamentos) dentro do Modal
-    module1LevelButtons.forEach((btn, index) => {
-        btn.classList.remove('completed', 'active', 'locked')
-        if (index < currentMissionIndex) {
-            btn.classList.add('completed')
-            btn.disabled = false
-            btn.title = `Fase ${index + 1}: Concluída! Clique para revisar.`
-        } else if (index === currentMissionIndex) {
-            btn.classList.add('active')
-            btn.disabled = false
-            btn.title = `Fase ${index + 1}: Em andamento!`
-        } else {
-            btn.classList.add('locked')
-            btn.disabled = true
-            btn.title = `Fase ${index + 1}: Bloqueada`
-        }
-    })
-
-    // 5. Atualiza Botões de Nível do Módulo 2 (Branches & Fusões - Desbloqueado!)
-    module2LevelButtons.forEach((btn) => {
+    // 4. Atualiza Todos os Botões de Nível em Todos os Módulos (1 a 6)
+    allLevelButtons.forEach((btn) => {
         const missionIdx = parseInt(btn.dataset.missionIndex, 10)
+        if (isNaN(missionIdx)) return
+
         btn.classList.remove('completed', 'active', 'locked')
         if (missionIdx < currentMissionIndex) {
             btn.classList.add('completed')
@@ -107,37 +130,69 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
             btn.disabled = false
             btn.title = `Fase ${missionIdx + 1}: Em andamento!`
         } else {
-            // Se o usuário completou o Módulo 1 (currentMissionIndex >= 6), habilita a fase 7
-            if (currentMissionIndex >= 6 && missionIdx === 6) {
-                btn.classList.remove('locked')
-                btn.classList.add('active')
-                btn.disabled = false
-            } else {
-                btn.classList.add('locked')
-                btn.disabled = true
-                btn.title = `Fase ${missionIdx + 1}: Bloqueada`
-            }
+            btn.classList.add('locked')
+            btn.disabled = true
+            btn.title = `Fase ${missionIdx + 1}: Bloqueada`
         }
     })
 
-    // 6. Atualiza Subtítulos das Fases no Modal
-    if (moduleStepDesc) {
-        const curr = missions[Math.min(currentMissionIndex, 5)]
-        if (curr) {
-            moduleStepDesc.textContent = `${Math.min(currentMissionIndex, 5) + 1}: ${curr.title}`
+    // 5. Atualiza Subtítulos de Passo de Cada Módulo
+    const currentMission = missions[currentMissionIndex]
+    if (stepDescs[1]) {
+        if (currentMissionIndex < 6 && currentMission) {
+            stepDescs[1].textContent = `${currentMissionIndex + 1}: ${currentMission.title}`
         } else {
-            moduleStepDesc.textContent = '🎉 Módulo 1 concluído com sucesso!'
+            stepDescs[1].textContent = '🎉 Módulo 1 concluído com sucesso!'
         }
     }
 
-    if (module2StepDesc) {
-        if (currentMissionIndex >= 6 && currentMissionIndex < missions.length) {
-            const curr = missions[currentMissionIndex]
-            module2StepDesc.textContent = `${currentMissionIndex - 5}: ${curr.title}`
-        } else if (currentMissionIndex >= missions.length) {
-            module2StepDesc.textContent = '🎉 Todas as fases concluídas com sucesso!'
+    if (stepDescs[2]) {
+        if (currentMissionIndex >= 6 && currentMissionIndex < 10 && currentMission) {
+            stepDescs[2].textContent = `${currentMissionIndex - 5}: ${currentMission.title}`
+        } else if (currentMissionIndex >= 10) {
+            stepDescs[2].textContent = '🎉 Módulo 2 concluído com sucesso!'
         } else {
-            module2StepDesc.textContent = '1: Missão 07: O Comando Switch'
+            stepDescs[2].textContent = '1: Missão 07: O Comando Switch'
+        }
+    }
+
+    if (stepDescs[3]) {
+        if (currentMissionIndex >= 10 && currentMissionIndex < 14 && currentMission) {
+            stepDescs[3].textContent = `${currentMissionIndex - 9}: ${currentMission.title}`
+        } else if (currentMissionIndex >= 14) {
+            stepDescs[3].textContent = '🎉 Módulo 3 concluído com sucesso!'
+        } else {
+            stepDescs[3].textContent = '1: Missão 11: Descarte no Working Directory'
+        }
+    }
+
+    if (stepDescs[4]) {
+        if (currentMissionIndex >= 14 && currentMissionIndex < 17 && currentMission) {
+            stepDescs[4].textContent = `${currentMissionIndex - 13}: ${currentMission.title}`
+        } else if (currentMissionIndex >= 17) {
+            stepDescs[4].textContent = '🎉 Módulo 4 concluído com sucesso!'
+        } else {
+            stepDescs[4].textContent = '1: Missão 15: Detecção de Conflito'
+        }
+    }
+
+    if (stepDescs[5]) {
+        if (currentMissionIndex >= 17 && currentMissionIndex < 20 && currentMission) {
+            stepDescs[5].textContent = `${currentMissionIndex - 16}: ${currentMission.title}`
+        } else if (currentMissionIndex >= 20) {
+            stepDescs[5].textContent = '🎉 Módulo 5 concluído com sucesso!'
+        } else {
+            stepDescs[5].textContent = '1: Missão 18: Conexão com Servidor Remoto'
+        }
+    }
+
+    if (stepDescs[6]) {
+        if (currentMissionIndex >= 20 && currentMissionIndex < missions.length && currentMission) {
+            stepDescs[6].textContent = `${currentMissionIndex - 19}: ${currentMission.title}`
+        } else if (currentMissionIndex >= missions.length) {
+            stepDescs[6].textContent = '🎉 Todas as 23 fases concluídas!'
+        } else {
+            stepDescs[6].textContent = '1: Missão 21: Gaveta Temporária com Stash'
         }
     }
 }
@@ -146,12 +201,19 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
  * Inicializa todos os ouvintes de eventos da janela modal e stepper de forma desacoplada
  * @param {Object} handlers Callbacks de interação
  * @param {Function} handlers.onSelectMission Chamado quando o usuário escolhe uma fase desbloqueada
- * @param {Function} handlers.onTabWarning Chamado quando o usuário clica em uma aba futura
  */
-export function initModalEvents({ onSelectMission, onTabWarning } = {}) {
+export function initModalEvents({ onSelectMission } = {}) {
     // Abertura do Modal
-    if (openMissionsBtn) openMissionsBtn.addEventListener('click', openMissionsModal)
-    if (missionTitleTrigger) missionTitleTrigger.addEventListener('click', openMissionsModal)
+    if (openMissionsBtn) {
+        openMissionsBtn.addEventListener('click', () => {
+            openMissionsModal()
+        })
+    }
+    if (missionTitleTrigger) {
+        missionTitleTrigger.addEventListener('click', () => {
+            openMissionsModal()
+        })
+    }
 
     // Interatividade do Stepper do Navbar
     navStepButtons.forEach(btn => {
@@ -183,42 +245,16 @@ export function initModalEvents({ onSelectMission, onTabWarning } = {}) {
         }
     })
 
-    // Alternância de Abas (Fundamentos e Branches ativas; outras com aviso pedagógico)
+    // Alternância de Abas
     tabButtons.forEach(btn => {
         btn.addEventListener('click', function () {
             const tabKey = btn.dataset.tab
-
-            if (tabKey === 'fundamentos') {
-                tabButtons.forEach(b => b.classList.remove('active'))
-                btn.classList.add('active')
-                if (module1Section) module1Section.style.display = 'flex'
-                if (module2Section) module2Section.style.display = 'none'
-            } else if (tabKey === 'branches') {
-                tabButtons.forEach(b => b.classList.remove('active'))
-                btn.classList.add('active')
-                if (module1Section) module1Section.style.display = 'none'
-                if (module2Section) module2Section.style.display = 'flex'
-            } else {
-                tabButtons.forEach(b => b.classList.remove('active'))
-                btn.classList.add('active')
-                if (onTabWarning) {
-                    onTabWarning(btn.textContent)
-                }
-            }
+            setActiveTab(tabKey)
         })
     })
 
-    // Navegação direta pelas fases do Módulo 1
-    module1LevelButtons.forEach((btn, index) => {
-        btn.addEventListener('click', function () {
-            if (!btn.disabled && onSelectMission) {
-                onSelectMission(index)
-            }
-        })
-    })
-
-    // Navegação direta pelas fases do Módulo 2
-    module2LevelButtons.forEach((btn) => {
+    // Navegação direta por qualquer botão de nível das 23 fases
+    allLevelButtons.forEach((btn) => {
         btn.addEventListener('click', function () {
             const index = parseInt(btn.dataset.missionIndex, 10)
             if (!btn.disabled && onSelectMission && !isNaN(index)) {

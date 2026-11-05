@@ -74,7 +74,7 @@
                 </div>
                 <span class="combo-divider"></span>
                 <div class="combo-missions">
-                    <span class="combo-missions-label">Missões <span id="global-stars">0/10</span></span>
+                    <span class="combo-missions-label">Missões <span id="global-stars">0/23</span></span>
                     <div class="combo-progress">
                         <div class="combo-progress-bar" id="nav-phases-bar" style="width: 0%"></div>
                     </div>
@@ -214,10 +214,10 @@
             <nav class="modal-tabs">
                 <button class="tab-btn active" data-tab="fundamentos">Fundamentos</button>
                 <button class="tab-btn" data-tab="branches">Branches</button>
-                <button class="tab-btn" data-tab="remoto">Remoto</button>
-                <button class="tab-btn" data-tab="conflitos">Conflitos</button>
                 <button class="tab-btn" data-tab="desfazer">Desfazer</button>
-                <button class="tab-btn" data-tab="historico">Histórico</button>
+                <button class="tab-btn" data-tab="conflitos">Conflitos</button>
+                <button class="tab-btn" data-tab="remoto">Remoto</button>
+                <button class="tab-btn" data-tab="historico">Power Tools</button>
             </nav>
 
             <div class="modal-body">
@@ -252,6 +252,67 @@
                         <button class="level-btn locked" data-mission-index="7" title="Fase 8: Trabalho Isolado (commits na feature)" disabled>2</button>
                         <button class="level-btn locked" data-mission-index="8" title="Fase 9: Fusão Fast-Forward (git merge)" disabled>3</button>
                         <button class="level-btn locked" data-mission-index="9" title="Fase 10: Limpeza de Branches (git branch -d)" disabled>4</button>
+                    </div>
+                </section>
+
+                <!-- Módulo 3: Desfazendo Coisas & Viagem no Tempo -->
+                <section class="module-section" id="module-3-section" style="display: none;">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 3 • Desbloqueado</span>
+                    </div>
+                    <h3 class="module-title">Módulo 3 — Desfazendo Coisas</h3>
+                    <p class="module-subtitle">git restore, git restore --staged, git commit --amend e git revert.</p>
+                    <p class="module-current-step" id="module-3-step-desc">1: Descarte no Working Directory</p>
+                    <div class="level-chips" id="module-3-levels">
+                        <button class="level-btn locked" data-mission-index="10" title="Fase 11: git restore" disabled>1</button>
+                        <button class="level-btn locked" data-mission-index="11" title="Fase 12: git restore --staged" disabled>2</button>
+                        <button class="level-btn locked" data-mission-index="12" title="Fase 13: git commit --amend" disabled>3</button>
+                        <button class="level-btn locked" data-mission-index="13" title="Fase 14: git revert" disabled>4</button>
+                    </div>
+                </section>
+
+                <!-- Módulo 4: Resolução de Conflitos -->
+                <section class="module-section" id="module-4-section" style="display: none;">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 4 • Desbloqueado</span>
+                    </div>
+                    <h3 class="module-title">Módulo 4 — Resolução de Conflitos</h3>
+                    <p class="module-subtitle">Identificação de marcadores, resolução no editor e git merge --abort.</p>
+                    <p class="module-current-step" id="module-4-step-desc">1: Detecção de Conflito</p>
+                    <div class="level-chips" id="module-4-levels">
+                        <button class="level-btn locked" data-mission-index="14" title="Fase 15: Detecção de Conflito" disabled>1</button>
+                        <button class="level-btn locked" data-mission-index="15" title="Fase 16: Resolução do Conflito" disabled>2</button>
+                        <button class="level-btn locked" data-mission-index="16" title="Fase 17: Abortar Fusão" disabled>3</button>
+                    </div>
+                </section>
+
+                <!-- Módulo 5: Colaboração & Remoto -->
+                <section class="module-section" id="module-5-section" style="display: none;">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 5 • Desbloqueado</span>
+                    </div>
+                    <h3 class="module-title">Módulo 5 — Colaboração & Remoto</h3>
+                    <p class="module-subtitle">git remote, git push -u, git fetch e git pull no GitHub.</p>
+                    <p class="module-current-step" id="module-5-step-desc">1: Conexão com Servidor Remoto</p>
+                    <div class="level-chips" id="module-5-levels">
+                        <button class="level-btn locked" data-mission-index="17" title="Fase 18: Conexão com Remoto" disabled>1</button>
+                        <button class="level-btn locked" data-mission-index="18" title="Fase 19: Git Push" disabled>2</button>
+                        <button class="level-btn locked" data-mission-index="19" title="Fase 20: Fetch & Pull" disabled>3</button>
+                    </div>
+                </section>
+
+                <!-- Módulo 6: Power Tools (Stash & Blame) -->
+                <section class="module-section" id="module-6-section" style="display: none;">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 6 • Power Tools</span>
+                    </div>
+                    <h3 class="module-title">Módulo 6 — Ferramentas do Dia a Dia</h3>
+                    <p class="module-subtitle">git stash, git stash pop, git stash list e git blame.</p>
+                    <p class="module-current-step" id="module-6-step-desc">1: Gaveta Temporária com Stash</p>
+                    <div class="level-chips" id="module-6-levels">
+                        <button class="level-btn locked" data-mission-index="20" title="Fase 21: Git Stash" disabled>1</button>
+                        <button class="level-btn locked" data-mission-index="21" title="Fase 22: Stash Pop & List" disabled>2</button>
+                        <button class="level-btn locked" data-mission-index="22" title="Fase 23: Git Blame" disabled>3</button>
                     </div>
                 </section>
             </div>
