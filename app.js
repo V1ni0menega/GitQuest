@@ -305,6 +305,36 @@ function isMissionCompleted(mission) {
     return mission.checklist.every(item => Boolean(gitState[item.checkKey]))
 }
 
+function advanceToNextMission() {
+    const current = missions[gitState.currentMissionIndex]
+    if (!current || !isMissionCompleted(current)) {
+        printOutput('Você precisa concluir todos os objetivos desta fase antes de avançar!', 'warning')
+        return
+    }
+
+    if (gitState.currentMissionIndex < missions.length - 1) {
+        gitState.currentMissionIndex++
+        renderMission()
+        if (promptInput) {
+            promptInput.value = ''
+            promptInput.placeholder = ''
+            promptInput.focus()
+        }
+        if (missions[gitState.currentMissionIndex]) {
+            printOutput(`Navegando para ${missions[gitState.currentMissionIndex].title}!`, 'info')
+        }
+    } else if (gitState.currentMissionIndex === missions.length - 1) {
+        // Última fase: avança para o estado final de vitória
+        gitState.currentMissionIndex++
+        renderMission()
+        if (promptInput) {
+            promptInput.value = ''
+            promptInput.placeholder = ''
+        }
+        openVictoryModal(gitState.xp)
+    }
+}
+
 function updateHintUI() {
     const current = missions[gitState.currentMissionIndex]
 
@@ -397,11 +427,14 @@ function renderMission() {
                 nextMissionBtn.disabled = false
                 nextMissionBtn.classList.remove('disabled')
                 nextMissionBtn.classList.add('ready')
-                nextMissionBtn.title = 'Avançar para a próxima fase'
                 if (gitState.currentMissionIndex === missions.length - 1) {
                     nextMissionBtn.textContent = 'Concluir Trilha 🏆'
+                    nextMissionBtn.title = 'Concluir a trilha e comemorar a vitória! (ou pressione ENTER)'
+                    if (promptInput) promptInput.placeholder = 'Fase concluída! Pressione [ENTER] para ver sua vitória 🏆'
                 } else {
                     nextMissionBtn.textContent = 'Próxima Fase ➔'
+                    nextMissionBtn.title = 'Avançar para a próxima fase (ou pressione ENTER)'
+                    if (promptInput) promptInput.placeholder = 'Fase concluída! Pressione [ENTER] para avançar ➔'
                 }
             } else {
                 nextMissionBtn.disabled = true
@@ -409,6 +442,7 @@ function renderMission() {
                 nextMissionBtn.classList.remove('ready')
                 nextMissionBtn.title = 'Complete os objetivos desta fase para avançar'
                 nextMissionBtn.textContent = 'Próxima Fase ➔'
+                if (promptInput) promptInput.placeholder = ''
             }
         }
     } else {
@@ -614,7 +648,13 @@ function processCommand(command) {
 
             renderDiffOutput(parsed.arg)
 
-            if (!gitState.diffViewed) {
+            // Checagem de objetivo da Fase 5 (GEG-21: Inspeção de Diferenças)
+            if (gitState.currentMissionIndex === 4 && !gitState.diffViewed) {
+                gitState.diffViewed = true
+                gitState.xp += 75
+                renderMission()
+                showRetroCelebration('+75 XP CONQUISTADO!', 'DIFERENÇAS INSPECIONADAS COM GIT DIFF!')
+            } else if (!gitState.diffViewed) {
                 gitState.diffViewed = true
                 showRetroCelebration('GIT DIFF EXPLORADO!', 'COMPARAÇÃO DE CÓDIGO LINHA A LINHA')
             }
@@ -728,7 +768,7 @@ function processCommand(command) {
                 printOutput(`Switched to a new branch '${parsed.arg}'`, 'success')
                 showRetroCelebration(`BRANCH '${parsed.arg.toUpperCase()}'!`, 'NOVA RAMIFICAÇÃO CRIADA')
 
-                // Checagem de objetivo da Fase 6 (GEG-20)
+                // Checagem de objetivo da Fase 6 (GEG-20: Ramificações)
                 if (parsed.arg === 'feature-auth' || gitState.currentMissionIndex === 5) {
                     if (!gitState.branchCreated) {
                         gitState.branchCreated = true
@@ -947,6 +987,14 @@ terminal.addEventListener('click', function () {
 promptInput.addEventListener('keydown', function (event) {
     switch (event.key) {
         case 'Enter':
+            const current = missions[gitState.currentMissionIndex]
+            if (current && isMissionCompleted(current)) {
+                // Se a fase atual já está concluída, bater Enter avança diretamente para a próxima fase!
+                advanceToNextMission()
+                promptInput.value = ''
+                break
+            }
+
             const command = promptInput.value.trim()
 
             if (command !== '') {
@@ -1004,6 +1052,9 @@ initModalEvents({
 initWelcomeModal({
     onStart: () => {
         promptInput.focus()
+    },
+    onOpenTrail: () => {
+        openMissionsModal()
     }
 })
 
@@ -1019,27 +1070,7 @@ initVictoryModal({
 
 // ─── Botão de Avanço Manual de Missão (GEG-18) ───
 if (nextMissionBtn) {
-    nextMissionBtn.addEventListener('click', () => {
-        const current = missions[gitState.currentMissionIndex]
-        if (!isMissionCompleted(current)) {
-            printOutput('Você precisa concluir todos os objetivos desta fase antes de avançar!', 'warning')
-            return
-        }
-
-        if (gitState.currentMissionIndex < missions.length - 1) {
-            gitState.currentMissionIndex++
-            renderMission()
-            promptInput.focus()
-            if (missions[gitState.currentMissionIndex]) {
-                printOutput(`Navegando para ${missions[gitState.currentMissionIndex].title}!`, 'info')
-            }
-        } else if (gitState.currentMissionIndex === missions.length - 1) {
-            // Última fase: avança para o estado final de vitória
-            gitState.currentMissionIndex++
-            renderMission()
-            openVictoryModal(gitState.xp)
-        }
-    })
+    nextMissionBtn.addEventListener('click', advanceToNextMission)
 }
 
 // ─── Evento do Botão de Dica Pedagógica (GEG-19) ───

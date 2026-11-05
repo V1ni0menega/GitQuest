@@ -60,18 +60,19 @@ export const missions = [
         ]
     },
     {
-        title: "Missão 05: Múltiplos Arquivos",
-        xp: 100,
-        description: "Novos arquivos surgiram no Working Directory ('components.js' e 'README.md'). Realize o ciclo completo: prepare ambos com 'git add .' e registre o novo snapshot com 'git commit -m \"feat: novos componentes\"'.",
-        command: 'git add . && git commit -m "feat: novos componentes"',
+        title: "Missão 05: Inspeção & Múltiplos Arquivos",
+        xp: 150,
+        description: "Novos arquivos surgiram no seu projeto ('components.js' com alterações e 'README.md'). Primeiro inspecione as linhas adicionadas e removidas com 'git diff', depois prepare ambos com 'git add .' e registre o novo snapshot com 'git commit -m \"feat: novos componentes\"'.",
+        command: 'git diff && git add . && git commit -m "feat: novos componentes"',
         checklist: [
+            { text: "Inspecionar as diferenças no código com 'git diff'", checkKey: "diffViewed" },
             { text: "Preparar múltiplos arquivos com 'git add .'", checkKey: "phase5Added" },
             { text: "Gravar o segundo commit com mensagem descritiva", checkKey: "phase5Committed" }
         ],
         hints: [
+            "O comando 'git diff' compara o código do Working Directory com a Staging Area ou último commit.",
             "Quando múltiplos arquivos são criados ou alterados, 'git add .' prepara todos simultaneamente.",
-            "Após preparar com 'git add .', finalize o snapshot registrando um commit com a flag '-m'.",
-            "Comandos recomendados: execute 'git add .' e depois 'git commit -m \"feat: novos componentes\"'."
+            "Comandos recomendados: primeiro digite 'git diff', depois 'git add .', e finalize com 'git commit -m \"feat: novos componentes\"'."
         ]
     },
     {
