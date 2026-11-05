@@ -160,6 +160,19 @@ function parserCommand(command) {
             }
         }
 
+        // Caso especial: git merge [--no-ff] <nome> (GEG-49 / GEG-50)
+        if (words[1] === 'merge') {
+            const hasNoFf = words.includes('--no-ff')
+            const branchName = words.find((w, i) => i > 1 && !w.startsWith('-')) || ''
+            return {
+                base: 'git merge',
+                arg: branchName,
+                flag: hasNoFf ? '--no-ff' : '',
+                rawFlag: hasNoFf ? '--no-ff' : '',
+                msg: ''
+            }
+        }
+
         const subCommand = words[1]
         if (subCommand === 'branch' || subCommand === 'checkout' || subCommand === 'switch' || subCommand === 'merge' || subCommand === 'add' || subCommand === 'log' || subCommand === 'status' || subCommand === 'diff') {
             return {
@@ -722,6 +735,9 @@ function processCommand(command) {
             } else {
                 gitState.commits.forEach(c => {
                     printOutput(`commit ${c.hash} (HEAD -> ${c.branch})`, 'warning')
+                    if (c.mergeParents) {
+                        printOutput(`Merge: ${c.mergeParents.join(' ')}`, 'info')
+                    }
                     printOutput(`Author: ${c.author}`)
                     printOutput(`Date:   ${c.date}`)
                     printOutput('')
@@ -1000,6 +1016,36 @@ function processCommand(command) {
             if (parsed.arg === gitState.currentBranch) {
                 printOutput('Already up to date.', 'info')
                 printOutput(`Dica: você já está na branch '${parsed.arg}'. Para fundir alterações, posicione-se na branch de destino (ex: main).`, 'warning')
+                break
+            }
+
+            // Caso Three-Way Merge (com flag --no-ff ou fusão com histórico divergente - GEG-50)
+            if (parsed.flag === '--no-ff') {
+                const mergeHash = Math.random().toString(16).substring(2, 9)
+                const p1 = gitState.commits.length > 0 ? gitState.commits[0].hash.substring(0, 7) : '7a4e12b'
+                const p2 = '3f8b91a'
+                gitState.commits.unshift({
+                    hash: mergeHash,
+                    branch: gitState.currentBranch,
+                    author: 'Dev Aprendiz <guest@gitquest.dev>',
+                    date: new Date().toUTCString(),
+                    msg: `Merge branch '${parsed.arg}' into ${gitState.currentBranch}`,
+                    mergeParents: [p1, p2]
+                })
+
+                repositoryFiles.appendChild(createFileItem(`merge-commit (${parsed.arg})`, gitState.currentBranch))
+
+                printOutput(`Merge made by the 'ort' strategy.`, 'info')
+                printOutput(' login.html | 24 ++++++++++++++++++++++++', 'diff-add')
+                printOutput(' login.css  | 18 ++++++++++++++++++', 'diff-add')
+                printOutput(' 2 files changed, 42 insertions(+)', 'success')
+                showRetroCelebration('THREE-WAY MERGE!', 'NÓ DE MERGE COMMIT GERADO')
+
+                if (gitState.currentMissionIndex === 8 && !gitState.mergeCompleted) {
+                    gitState.mergeCompleted = true
+                    gitState.xp += 200
+                    renderMission()
+                }
                 break
             }
 
