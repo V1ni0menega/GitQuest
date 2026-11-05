@@ -9,8 +9,12 @@ const openMissionsBtn     = document.getElementById('open-missions-btn')
 const missionTitleTrigger = document.getElementById('mission-title-trigger')
 const closeModalBtn       = document.getElementById('close-modal-btn')
 const closeModalDot       = document.getElementById('close-modal-dot')
+const module1Section      = document.getElementById('module-1-section')
+const module2Section      = document.getElementById('module-2-section')
 const module1LevelButtons = document.querySelectorAll('#module-1-levels .level-btn')
+const module2LevelButtons = document.querySelectorAll('#module-2-levels .level-btn')
 const moduleStepDesc      = document.getElementById('module-step-desc')
+const module2StepDesc     = document.getElementById('module-2-step-desc')
 const tabButtons          = document.querySelectorAll('.modal-tabs .tab-btn')
 
 // Seletores das Estatísticas Globais & Stepper do Navbar
@@ -90,13 +94,50 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
         }
     })
 
-    // 5. Atualiza Subtítulo da Fase Atual no Modal
-    if (moduleStepDesc) {
-        const curr = missions[currentMissionIndex]
-        if (curr) {
-            moduleStepDesc.textContent = `${currentMissionIndex + 1}: ${curr.title}`
+    // 5. Atualiza Botões de Nível do Módulo 2 (Branches & Fusões - Desbloqueado!)
+    module2LevelButtons.forEach((btn) => {
+        const missionIdx = parseInt(btn.dataset.missionIndex, 10)
+        btn.classList.remove('completed', 'active', 'locked')
+        if (missionIdx < currentMissionIndex) {
+            btn.classList.add('completed')
+            btn.disabled = false
+            btn.title = `Fase ${missionIdx + 1}: Concluída! Clique para revisar.`
+        } else if (missionIdx === currentMissionIndex) {
+            btn.classList.add('active')
+            btn.disabled = false
+            btn.title = `Fase ${missionIdx + 1}: Em andamento!`
         } else {
-            moduleStepDesc.textContent = '🎉 Todas as fases concluídas com sucesso!'
+            // Se o usuário completou o Módulo 1 (currentMissionIndex >= 6), habilita a fase 7
+            if (currentMissionIndex >= 6 && missionIdx === 6) {
+                btn.classList.remove('locked')
+                btn.classList.add('active')
+                btn.disabled = false
+            } else {
+                btn.classList.add('locked')
+                btn.disabled = true
+                btn.title = `Fase ${missionIdx + 1}: Bloqueada`
+            }
+        }
+    })
+
+    // 6. Atualiza Subtítulos das Fases no Modal
+    if (moduleStepDesc) {
+        const curr = missions[Math.min(currentMissionIndex, 5)]
+        if (curr) {
+            moduleStepDesc.textContent = `${Math.min(currentMissionIndex, 5) + 1}: ${curr.title}`
+        } else {
+            moduleStepDesc.textContent = '🎉 Módulo 1 concluído com sucesso!'
+        }
+    }
+
+    if (module2StepDesc) {
+        if (currentMissionIndex >= 6 && currentMissionIndex < missions.length) {
+            const curr = missions[currentMissionIndex]
+            module2StepDesc.textContent = `${currentMissionIndex - 5}: ${curr.title}`
+        } else if (currentMissionIndex >= missions.length) {
+            module2StepDesc.textContent = '🎉 Todas as fases concluídas com sucesso!'
+        } else {
+            module2StepDesc.textContent = '1: Missão 07: O Comando Switch'
         }
     }
 }
@@ -142,13 +183,27 @@ export function initModalEvents({ onSelectMission, onTabWarning } = {}) {
         }
     })
 
-    // Alternância de Abas
+    // Alternância de Abas (Fundamentos e Branches ativas; outras com aviso pedagógico)
     tabButtons.forEach(btn => {
         btn.addEventListener('click', function () {
-            tabButtons.forEach(b => b.classList.remove('active'))
-            btn.classList.add('active')
-            if (btn.dataset.tab !== 'fundamentos' && onTabWarning) {
-                onTabWarning(btn.textContent)
+            const tabKey = btn.dataset.tab
+
+            if (tabKey === 'fundamentos') {
+                tabButtons.forEach(b => b.classList.remove('active'))
+                btn.classList.add('active')
+                if (module1Section) module1Section.style.display = 'flex'
+                if (module2Section) module2Section.style.display = 'none'
+            } else if (tabKey === 'branches') {
+                tabButtons.forEach(b => b.classList.remove('active'))
+                btn.classList.add('active')
+                if (module1Section) module1Section.style.display = 'none'
+                if (module2Section) module2Section.style.display = 'flex'
+            } else {
+                tabButtons.forEach(b => b.classList.remove('active'))
+                btn.classList.add('active')
+                if (onTabWarning) {
+                    onTabWarning(btn.textContent)
+                }
             }
         })
     })
@@ -157,6 +212,16 @@ export function initModalEvents({ onSelectMission, onTabWarning } = {}) {
     module1LevelButtons.forEach((btn, index) => {
         btn.addEventListener('click', function () {
             if (!btn.disabled && onSelectMission) {
+                onSelectMission(index)
+            }
+        })
+    })
+
+    // Navegação direta pelas fases do Módulo 2
+    module2LevelButtons.forEach((btn) => {
+        btn.addEventListener('click', function () {
+            const index = parseInt(btn.dataset.missionIndex, 10)
+            if (!btn.disabled && onSelectMission && !isNaN(index)) {
                 onSelectMission(index)
             }
         })

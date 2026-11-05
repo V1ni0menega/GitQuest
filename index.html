@@ -74,7 +74,7 @@
                 </div>
                 <span class="combo-divider"></span>
                 <div class="combo-missions">
-                    <span class="combo-missions-label">Missões <span id="global-stars">0/6</span></span>
+                    <span class="combo-missions-label">Missões <span id="global-stars">0/10</span></span>
                     <div class="combo-progress">
                         <div class="combo-progress-bar" id="nav-phases-bar" style="width: 0%"></div>
                     </div>
@@ -222,7 +222,10 @@
 
             <div class="modal-body">
                 <!-- Módulo 1: Fundamentos Locais -->
-                <section class="module-section">
+                <section class="module-section" id="module-1-section">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 1 • Fundamentos</span>
+                    </div>
                     <h3 class="module-title">Módulo 1 — Fundamentos Locais</h3>
                     <p class="module-subtitle">git init, git add, git commit e o ciclo de vida do arquivo.</p>
                     <p class="module-current-step" id="module-step-desc">1: Seu primeiro commit</p>
@@ -236,16 +239,19 @@
                     </div>
                 </section>
 
-                <!-- Módulo 2: Branches & Fusões -->
-                <section class="module-section module-locked">
+                <!-- Módulo 2: Branches & Fusões (Desbloqueado!) -->
+                <section class="module-section" id="module-2-section">
+                    <div class="module-header-badge">
+                        <span class="module-status-pill unlocked">Módulo 2 • Desbloqueado</span>
+                    </div>
                     <h3 class="module-title">Módulo 2 — Branches & Fusões</h3>
                     <p class="module-subtitle">git branch, git switch e merges fast-forward e de três vias.</p>
-                    <p class="module-current-step">1: Criando sua primeira branch</p>
-                    <div class="level-chips">
-                        <button class="level-btn locked" disabled>1</button>
-                        <button class="level-btn locked" disabled>2</button>
-                        <button class="level-btn locked" disabled>3</button>
-                        <button class="level-btn locked" disabled>4</button>
+                    <p class="module-current-step" id="module-2-step-desc">1: O Comando Switch</p>
+                    <div class="level-chips" id="module-2-levels">
+                        <button class="level-btn locked" data-mission-index="6" title="Fase 7: O Comando Switch (git switch -c)" disabled>1</button>
+                        <button class="level-btn locked" data-mission-index="7" title="Fase 8: Trabalho Isolado (commits na feature)" disabled>2</button>
+                        <button class="level-btn locked" data-mission-index="8" title="Fase 9: Fusão Fast-Forward (git merge)" disabled>3</button>
+                        <button class="level-btn locked" data-mission-index="9" title="Fase 10: Limpeza de Branches (git branch -d)" disabled>4</button>
                     </div>
                 </section>
             </div>
