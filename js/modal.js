@@ -111,9 +111,9 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
             btn.title = `Fase ${index + 1}: Em andamento!`
             if (circle) circle.textContent = (index + 1)
         } else {
-            btn.classList.remove('locked')
-            btn.disabled = false
-            btn.title = `Fase ${index + 1}: Liberada! Clique para jogar.`
+            btn.classList.add('locked')
+            btn.disabled = true
+            btn.title = `Fase ${index + 1}: Bloqueada`
             if (circle) circle.textContent = (index + 1)
         }
     })
