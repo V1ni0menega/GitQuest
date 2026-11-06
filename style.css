@@ -207,27 +207,6 @@ body {
     color: #ffffff;
 }
 
-.step-item:not(.locked) .step-circle {
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.05);
-    color: #94a3b8;
-}
-
-.step-item:not(.locked) .step-label {
-    color: #cbd5e1;
-}
-
-.step-item:not(.locked):hover .step-circle {
-    border-color: #06b6d4;
-    color: #38bdf8;
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
-}
-
-.step-item:not(.locked):hover .step-label {
-    color: #ffffff;
-}
-
 .step-item.locked {
     cursor: not-allowed;
     opacity: 0.65;
@@ -1637,19 +1616,9 @@ body {
     box-shadow: 0 0 22px rgba(6, 182, 212, 0.7);
 }
 
-/* Fase Desbloqueada / Disponível para Jogar */
-.level-btn:not(.completed):not(.active):not(.locked) {
-    cursor: pointer;
-    background: #1e283d;
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.level-btn:not(.completed):not(.active):not(.locked):hover {
+.level-btn:hover:not(.locked) {
     background: #27354f;
     color: #ffffff;
-    border-color: #8b5cf6;
-    box-shadow: 0 0 14px rgba(139, 92, 246, 0.4);
     transform: translateY(-2px);
 }
 
