@@ -39,7 +39,7 @@ const navPhasesBar        = document.getElementById('nav-phases-bar')
 const navStepButtons      = document.querySelectorAll('#nav-stepper .step-item')
 
 // Determina qual aba corresponde ao índice de missão
-function getTabForMission(index) {
+export function getTabForMission(index) {
     if (index < 6) return 'fundamentos'
     if (index < 10) return 'branches'
     if (index < 14) return 'desfazer'
@@ -49,9 +49,12 @@ function getTabForMission(index) {
 }
 
 // Abre a janela modal e sincroniza a aba com a missão atual
-export function openMissionsModal() {
+export function openMissionsModal(targetIndex) {
     if (!missionsModal) return
     missionsModal.classList.remove('hidden')
+    if (typeof targetIndex === 'number' && !isNaN(targetIndex)) {
+        setActiveTab(getTabForMission(targetIndex))
+    }
 }
 
 // Fecha a janela modal
@@ -108,14 +111,14 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
             btn.title = `Fase ${index + 1}: Em andamento!`
             if (circle) circle.textContent = (index + 1)
         } else {
-            btn.classList.add('locked')
-            btn.disabled = true
-            btn.title = `Fase ${index + 1}: Bloqueada`
+            btn.classList.remove('locked')
+            btn.disabled = false
+            btn.title = `Fase ${index + 1}: Liberada! Clique para jogar.`
             if (circle) circle.textContent = (index + 1)
         }
     })
 
-    // 4. Atualiza Todos os Botões de Nível em Todos os Módulos (1 a 6)
+    // 4. Atualiza Todos os Botões de Nível em Todos os Módulos (1 a 6) — Todos os Módulos Liberados!
     allLevelButtons.forEach((btn) => {
         const missionIdx = parseInt(btn.dataset.missionIndex, 10)
         if (isNaN(missionIdx)) return
@@ -130,9 +133,10 @@ export function updateModalAndStatsUI(currentMissionIndex, xp) {
             btn.disabled = false
             btn.title = `Fase ${missionIdx + 1}: Em andamento!`
         } else {
-            btn.classList.add('locked')
-            btn.disabled = true
-            btn.title = `Fase ${missionIdx + 1}: Bloqueada`
+            // Módulos liberados para navegação livre
+            btn.classList.remove('locked')
+            btn.disabled = false
+            btn.title = `Fase ${missionIdx + 1}: Liberada! Clique para jogar.`
         }
     })
 
@@ -206,12 +210,12 @@ export function initModalEvents({ onSelectMission } = {}) {
     // Abertura do Modal
     if (openMissionsBtn) {
         openMissionsBtn.addEventListener('click', () => {
-            openMissionsModal()
+            openMissionsModal(window.gitState ? window.gitState.currentMissionIndex : 0)
         })
     }
     if (missionTitleTrigger) {
         missionTitleTrigger.addEventListener('click', () => {
-            openMissionsModal()
+            openMissionsModal(window.gitState ? window.gitState.currentMissionIndex : 0)
         })
     }
 

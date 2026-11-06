@@ -1798,18 +1798,80 @@ promptInput.addEventListener('keydown', function (event) {
     }
 })
 
+// Prepara o ambiente e arquivos para que qualquer missão liberada funcione perfeitamente
+function setupStateForMission(index) {
+    if (index >= 1) {
+        gitState.initialized = true
+        if (workingFiles && workingFiles.children.length === 0 && (!gitState.commits || gitState.commits.length === 0)) {
+            workingFiles.innerHTML = ''
+            workingFiles.appendChild(createFileItem('index.html'))
+            workingFiles.appendChild(createFileItem('style.css'))
+            workingFiles.appendChild(createFileItem('app.js'))
+        }
+    }
+    if (index >= 2) {
+        gitState.filesAdded = true
+    }
+    if (index >= 3) {
+        if (!gitState.commits || gitState.commits.length === 0) {
+            gitState.commits = [{
+                hash: '7a4e12b',
+                branch: 'main',
+                author: 'Dev Aprendiz <guest@gitquest.dev>',
+                date: new Date().toUTCString(),
+                msg: 'feat: inicialização do projeto'
+            }]
+        }
+    }
+    if (index >= 7) { // Módulo 2 (a partir da Fase 8 já tem feature-login criada)
+        if (!gitState.branches.includes('feature-login')) {
+            gitState.branches.push('feature-login')
+        }
+        if (index === 7) { // Fase 8: Trabalho Isolado na feature-login
+            gitState.currentBranch = 'feature-login'
+        } else if (index >= 8) { // Fase 9+: Fusão na main
+            gitState.currentBranch = 'main'
+        }
+    } else {
+        // Nas fases anteriores e na Fase 7, feature-login ainda não existe e será criada com switch -c
+        gitState.branches = gitState.branches.filter(b => b !== 'feature-login')
+        gitState.currentBranch = 'main'
+    }
+    if (index === 10) { // Fase 11: git restore app.js
+        if (workingFiles && workingFiles.children.length === 0) {
+            workingFiles.appendChild(createFileItem('app.js'))
+        }
+    }
+    if (index === 11) { // Fase 12: git restore --staged app.js
+        if (stagingFiles && stagingFiles.children.length === 0) {
+            stagingFiles.appendChild(createFileItem('app.js'))
+        }
+    }
+    if (index === 14) { // Fase 15: Detecção de Conflito
+        gitState.inConflict = false
+    }
+    if (index === 15 || index === 16) { // Fase 16 e 17: Conflito de Merge
+        gitState.inConflict = true
+        gitState.conflictDetected = true
+    }
+    if (index >= 20) { // Módulo 6: Power Tools
+        if (gitState.stashStack.length === 0) {
+            gitState.stashStack.push({ id: 'stash@{0}', msg: 'WIP on main: 3f8b91a feat: protótipo preliminar' })
+        }
+    }
+    updatePromptAndPipelineBranch()
+}
+
 // ─── Eventos do Modal de Missões ───
-// Inicializa os ouvintes do modal através do módulo desacoplado
+// Inicializa os ouvintes do modal através do módulo desacoplado (todos os módulos liberados!)
 initModalEvents({
     onSelectMission: (index) => {
-        if (index <= gitState.currentMissionIndex) {
+        if (!isNaN(index) && index >= 0 && index < missions.length) {
             gitState.currentMissionIndex = index
-            if (index === 16) {
-                gitState.inConflict = true
-            }
+            setupStateForMission(index)
             renderMission()
             closeMissionsModal()
-            printOutput(`Navegando para ${missions[index].title}!`)
+            printOutput(`Navegando para ${missions[index].title}!`, 'info')
         }
     }
 })
@@ -1820,14 +1882,14 @@ initWelcomeModal({
         promptInput.focus()
     },
     onOpenTrail: () => {
-        openMissionsModal()
+        openMissionsModal(gitState.currentMissionIndex)
     }
 })
 
 // ─── Eventos do Modal de Vitória (GEG-18) ───
 initVictoryModal({
     onViewTrail: () => {
-        openMissionsModal()
+        openMissionsModal(gitState.currentMissionIndex)
     },
     onContinue: () => {
         promptInput.focus()
